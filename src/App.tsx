@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Maximize, Music, SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,9 +16,15 @@ import {
 import { CanvasStage } from '@/components/CanvasStage'
 import { ControlPanel } from '@/components/ControlPanel'
 import { PlayerBar } from '@/components/PlayerBar'
+import { bindEngineToStore } from '@/audio/bindEngineToStore'
+import { getAudioEngine } from '@/audio/engine'
+import { useAudioEvents } from '@/hooks/useAudioEvents'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 function App() {
+  useAudioEvents()
+  useEffect(() => bindEngineToStore(getAudioEngine()), [])
+
   const [controlsOpen, setControlsOpen] = useState(false)
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const isTablet = useMediaQuery('(min-width: 768px)')

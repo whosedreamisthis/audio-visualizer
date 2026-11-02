@@ -1,4 +1,10 @@
-import type { EqBandId, FftSize } from '@/types'
+import type {
+  EqBandId,
+  FftSize,
+  ThemeId,
+  VisualizerMode,
+  VisualizerSettings,
+} from '@/types'
 
 export const GAIN = { min: 0, max: 2, default: 1 } as const
 export const VOLUME = { min: 0, max: 1, default: 0.7 } as const
@@ -31,6 +37,36 @@ export const BAND_RANGES_HZ = {
   mid: [250, 4000],
   treble: [4000, 16000],
 } as const
+
+export const VISUALIZER_MODES: readonly VisualizerMode[] = [
+  'waveform',
+  'bars',
+  'particles',
+]
+export const THEME_IDS: readonly ThemeId[] = [
+  'neon',
+  'sunset',
+  'ocean',
+  'mono',
+  'aurora',
+]
+
+export const BAR_COUNT = { min: 16, max: 128 } as const
+export const PARTICLE_COUNT = { min: 100, max: 3000 } as const
+export const LINE_WIDTH = { min: 1, max: 6 } as const
+
+export const DEFAULT_VISUALIZER_SETTINGS: VisualizerSettings = {
+  fftSize: DEFAULT_FFT_SIZE,
+  smoothing: SMOOTHING.default,
+  sensitivity: SENSITIVITY.default,
+  barCount: 64,
+  particleCount: 800,
+  lineWidth: 2,
+  glow: false,
+  mirror: true,
+}
+
+export const EQ_FLAT: Record<EqBandId, number> = { low: 0, mid: 0, high: 0 }
 
 export const ACCEPTED_AUDIO_EXTENSIONS = [
   '.mp3',

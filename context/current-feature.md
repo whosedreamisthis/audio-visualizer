@@ -1,18 +1,31 @@
 # Current Feature
 
-<!-- Feature name and short description -->
+State Stores (see `context/features/state-stores.md`): Zustand stores for playback, audio, visualizer and UI state, the store → engine binding, and throttled engine → store events.
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- [ ] `playbackStore`: status, track, currentTime, duration, loop, error + actions
+- [ ] `audioStore` (persisted): volume, muted, gain, speed, preservePitch, eq, eqBypass + actions, EQ presets
+- [ ] `visualizerStore` (persisted): mode, themeId, settings + actions
+- [ ] `uiStore`: sidebar open, active tab, fullscreen, controls visible
+- [ ] Persist with `partialize`, `version`, `migrate` and a `merge` that sanitizes corrupted data; safe storage fallback
+- [ ] `src/audio/bindEngineToStore.ts`: selector subscriptions that apply store values to the engine once it is initialized
+- [ ] Engine `initialized` event and `isInitialized` getter
+- [ ] `src/hooks/useAudioEvents.ts`: engine events → throttled playback store updates (about 10 Hz)
+- [ ] Mount the binding and events hook in `App`
+- [ ] Vitest tests: clamping, presets, sanitize/migrate, binding with a mocked engine, throttle
+- [ ] `npm test`, `npm run lint` and `npm run build` pass
 
 ## Notes
 
-<!-- Any extra notes -->
+- Setters clamp using the shared constants and `clamp`.
+- Persisted stores exclude transient fields; corrupted `localStorage` falls back to defaults.
+- The UI controls are still static; wiring them to these stores happens in the feature specs that follow.
+- `erasableSyntaxOnly` is on: no enums or constructor parameter properties.
 
 ## Completed Features
 

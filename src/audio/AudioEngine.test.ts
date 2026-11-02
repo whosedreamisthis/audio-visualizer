@@ -93,6 +93,20 @@ describe('AudioEngine', () => {
     expect(ctx.createBiquadFilter).toHaveBeenCalledTimes(3)
   })
 
+  it('reports isInitialized and emits initialized once', () => {
+    const { env } = createFakes()
+    const engine = new AudioEngine(env)
+    const handler = vi.fn()
+    engine.on('initialized', handler)
+
+    expect(engine.isInitialized).toBe(false)
+    engine.init()
+    engine.init()
+
+    expect(engine.isInitialized).toBe(true)
+    expect(handler).toHaveBeenCalledTimes(1)
+  })
+
   it('connects source → filters → gain → analyser → destination', () => {
     const { env, ctx, source, filters, gain, analyser } = createFakes()
     new AudioEngine(env).init()

@@ -32,6 +32,8 @@ export class AudioEngineError extends Error {
 }
 
 export interface EngineEventMap {
+  /** Fired once the context and graph exist and parameters can be applied. */
+  initialized: void
   /** Current playback position in seconds. */
   timeupdate: number
   /** Track duration in seconds. */
@@ -87,6 +89,7 @@ export class AudioEngine {
   private readonly listeners: {
     [K in keyof EngineEventMap]: Set<EngineHandler<K>>
   } = {
+    initialized: new Set(),
     timeupdate: new Set(),
     loadedmetadata: new Set(),
     play: new Set(),
@@ -145,6 +148,11 @@ export class AudioEngine {
     this.gainNode = gainNode
     this.analyser = analyser
     this.freqBuffer = new Uint8Array(analyser.frequencyBinCount)
+    this.emit('initialized', undefined)
+  }
+
+  get isInitialized(): boolean {
+    return this.ctx !== null
   }
 
   // --- Loading -----------------------------------------------------------
