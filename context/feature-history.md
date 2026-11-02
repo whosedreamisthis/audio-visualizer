@@ -33,3 +33,10 @@
   - `src/audio/bindEngineToStore.ts` applies store values to the engine through per-field selector subscriptions (EQ uses `shallow`, flat while bypassed) and re-applies everything on the new engine `initialized` event; the engine gained `isInitialized`.
   - `src/hooks/useAudioEvents.ts` mirrors engine events into the playback store (time throttled to about 10 Hz); `App.tsx` mounts it and the binding.
   - Tests: 36 new (74 total) covering store clamping, presets, sanitize/migrate/merge, binding with a mocked engine, throttle and EQ presets.
+
+- **File Drop Zone:** Users can now drop or pick an audio file and hear it play through the engine (first feature with audible output).
+  - `src/lib/validateAudioFile.ts`: rejects empty and oversized (over 100 MB) files; accepts a known audio extension or MIME type (browsers sometimes leave `type` empty); messages name the file. New `ACCEPTED_AUDIO_MIME_TYPES` constant.
+  - `src/hooks/useFileDrop.ts`: window-level dragenter/over/leave/drop with depth counting, only reacts to drags containing files, prevents the browser navigating to the file.
+  - `src/audio/loadAudioFile.ts`: `loadAudioFile` validates, sets status `loading`, calls `engine.init()` inside the gesture, loads, sets the track and plays; blocked autoplay shows an info toast, other failures clear the track, set the error and toast. A load token ignores stale loads when a newer file arrives. `handleAudioFiles` picks the first valid file and toasts when others are ignored.
+  - `src/components/CanvasStage.tsx`: hidden multi-file input behind the Choose file button, loading spinner state, "Release to play" overlay, card hidden once a track is loaded.
+  - Tests: 9 new for `validateAudioFile` (83 total). Playback controls and the real visualizer are not wired yet; the preset button stays inert until the preset library.
