@@ -1,18 +1,29 @@
 # Current Feature
 
-<!-- Feature name and short description -->
+Audio Engine (see `context/features/audio-engine.md`): a React-free `AudioEngine` that owns the `<audio>` element and the Web Audio graph, plus band-energy helpers.
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- [ ] `src/audio/AudioEngine.ts`: graph `<audio>` → source → low shelf → mid peaking → high shelf → gain → analyser → destination
+- [ ] Lazy, idempotent `init()`; `AudioContext` resumed on user gesture
+- [ ] `loadFile`, `loadUrl` resolving with `TrackMeta`, rejecting with a typed error
+- [ ] `play` (typed autoplay-blocked error), `pause`, `seek`, `setPlaybackRate`, `setPreservePitch`, `setGain`, `setVolume`, `setMuted`, `setEqBand`
+- [ ] `setFftSize`, `setSmoothing`, `getFrequencyData`, `getTimeDomainData`, `getBands`
+- [ ] `src/audio/bands.ts`: `getBandEnergy` and helpers
+- [ ] Typed event subscription (`timeupdate`, `loadedmetadata`, `play`, `pause`, `ended`, `error`)
+- [ ] `dispose()` and an HMR-safe singleton accessor in `src/audio/engine.ts`
+- [ ] Vitest tests for `bands.ts` and engine logic with a mocked `AudioContext`
+- [ ] `npm test`, `npm run lint` and `npm run build` pass
 
 ## Notes
 
-<!-- Any extra notes -->
+- No React or Zustand imports in the engine; store binding comes in `state-stores`.
+- `erasableSyntaxOnly` is on: no constructor parameter properties or enums.
+- Real audio output can only be verified by ear in the browser; nothing in the UI calls the engine yet.
 
 ## Completed Features
 
