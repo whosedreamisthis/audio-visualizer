@@ -13,3 +13,9 @@
   - `src/components/ControlPanel.tsx` with Tabs and panels in `src/components/panels/`: Mixer (gain, speed, preserve pitch), EQ (3 vertical sliders, bypass, presets), Visual (mode, theme swatches, FFT, smoothing, sensitivity, bar count, glow, mirror), Presets (sample tracks, microphone, saved presets placeholder).
   - `src/components/PlayerBar.tsx`: transport, seek, time, volume and speed readout (hidden below 768 px); `src/components/ControlRow.tsx` shared label/value/reset row; `src/hooks/useMediaQuery.ts`.
   - Values are hardcoded and uncontrolled; touch targets are at least 44 px, with safe-area insets. No tests added: the feature is components only, and `useMediaQuery` only wraps a browser API.
+
+- **Types and Constants:** Added the shared foundation that the engine, stores, visualizers and UI will import.
+  - `src/types/index.ts`: `VisualizerMode`, `ThemeId`, `EqBandId`, `FftSize`, `TrackSource`, `Size`, `TrackMeta`, `PresetTrack`, `BandEnergy`, `AudioFrame`, `Theme`, `VisualizerSettings`, `DrawArgs`, `Visualizer`.
+  - `src/lib/constants.ts`: gain, volume, speed, EQ range, EQ band definitions (200 Hz low shelf, 1 kHz peaking, 4 kHz high shelf), FFT sizes and default, smoothing, sensitivity, band frequency ranges, accepted extensions and the 100 MB file cap.
+  - `src/lib/math.ts`: `clamp` (non-finite → min), `lerp`, `mapRange`; `src/lib/format.ts`: `formatTime`, `formatDb`, `formatPercent`, `formatSpeed` with safe fallbacks for `NaN`, `Infinity` and negatives.
+  - Vitest: `math.test.ts` and `format.test.ts` (16 tests). Nothing imports the constants yet; the static UI still has hardcoded values.
