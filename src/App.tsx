@@ -1,41 +1,98 @@
-import { Music, Maximize, Play, SkipBack, SkipForward } from 'lucide-react'
+import { useState } from 'react'
+import { Maximize, Music, SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { CanvasStage } from '@/components/CanvasStage'
+import { ControlPanel } from '@/components/ControlPanel'
+import { PlayerBar } from '@/components/PlayerBar'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 function App() {
+  const [controlsOpen, setControlsOpen] = useState(false)
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
+  const isTablet = useMediaQuery('(min-width: 768px)')
+
   return (
-    <div className="flex h-dvh flex-col bg-background text-foreground">
-      <header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
+    <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b px-3 pt-[env(safe-area-inset-top)] sm:px-4">
         <div className="flex items-center gap-2">
           <Music className="size-5" aria-hidden />
           <h1 className="text-sm font-semibold">Audio Visualizer Studio</h1>
         </div>
-        <Button variant="ghost" size="icon" aria-label="Fullscreen">
-          <Maximize />
-        </Button>
+        <div className="flex items-center gap-1">
+          {!isDesktop && (
+            <Button
+              variant="outline"
+              className="min-h-11"
+              onClick={() => setControlsOpen(true)}
+            >
+              <SlidersHorizontal /> Controls
+            </Button>
+          )}
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-11"
+                  aria-label="Fullscreen"
+                />
+              }
+            >
+              <Maximize />
+            </TooltipTrigger>
+            <TooltipContent>Fullscreen (F)</TooltipContent>
+          </Tooltip>
+        </div>
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <main className="relative flex-1 bg-black/40">
-          <div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">
-            Canvas area
-          </div>
+        <main className="min-w-0 flex-1">
+          <CanvasStage />
         </main>
-        <aside className="hidden w-80 shrink-0 border-l p-4 text-sm text-muted-foreground md:block">
-          Sidebar
-        </aside>
+        {isDesktop && (
+          <aside className="w-80 shrink-0 border-l p-4">
+            <ControlPanel />
+          </aside>
+        )}
       </div>
 
-      <footer className="flex h-20 shrink-0 items-center justify-center gap-2 border-t px-4">
-        <Button variant="ghost" size="icon" aria-label="Previous" disabled>
-          <SkipBack />
-        </Button>
-        <Button size="icon" aria-label="Play" disabled>
-          <Play />
-        </Button>
-        <Button variant="ghost" size="icon" aria-label="Next" disabled>
-          <SkipForward />
-        </Button>
-      </footer>
+      <PlayerBar />
+
+      {!isDesktop && (
+        <Sheet open={controlsOpen} onOpenChange={setControlsOpen}>
+          <SheetContent
+            side={isTablet ? 'right' : 'bottom'}
+            className={
+              isTablet
+                ? 'w-96 max-w-full p-4'
+                : 'max-h-[85dvh] rounded-t-2xl p-4 pb-[max(1rem,env(safe-area-inset-bottom))]'
+            }
+          >
+            <SheetHeader className="p-0">
+              <SheetTitle>Controls</SheetTitle>
+              <SheetDescription className="sr-only">
+                Mixer, equalizer, visual settings and presets
+              </SheetDescription>
+            </SheetHeader>
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <ControlPanel />
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   )
 }
