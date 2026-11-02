@@ -105,7 +105,7 @@ Most music visualizers are either desktop apps, locked inside a player, or too s
 | Icons | `lucide-react` | |
 | UI components | **shadcn/ui** (Radix primitives + Tailwind) | Slider, Tabs, Button, Tooltip, Toggle, Select, Switch, Sheet, Sonner toasts, Card, Separator; components are copied into `src/components/ui/` |
 | Lint / format | ESLint + Prettier | Already scaffolded ESLint |
-| Testing | Vitest + React Testing Library | Pure logic (EQ math, beat detection, store) |
+| Testing | Vitest (node environment) | Pure logic only (EQ math, beat detection, stores); no component tests |
 
 > **Note:** check current docs (Context7) for Tailwind v4, TanStack Query v5 and Zustand v5 APIs before implementing; they have changed significantly between majors.
 
@@ -113,7 +113,7 @@ Most music visualizers are either desktop apps, locked inside a player, or too s
 
 ```bash
 npm install zustand @tanstack/react-query lucide-react
-npm install -D tailwindcss @tailwindcss/vite vitest @testing-library/react jsdom
+npm install -D tailwindcss @tailwindcss/vite vitest
 npm install -D @tanstack/react-query-devtools
 
 # shadcn/ui (needs the "@" path alias in vite.config.ts and tsconfig)
