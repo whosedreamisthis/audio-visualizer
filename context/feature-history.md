@@ -19,3 +19,10 @@
   - `src/lib/constants.ts`: gain, volume, speed, EQ range, EQ band definitions (200 Hz low shelf, 1 kHz peaking, 4 kHz high shelf), FFT sizes and default, smoothing, sensitivity, band frequency ranges, accepted extensions and the 100 MB file cap.
   - `src/lib/math.ts`: `clamp` (non-finite → min), `lerp`, `mapRange`; `src/lib/format.ts`: `formatTime`, `formatDb`, `formatPercent`, `formatSpeed` with safe fallbacks for `NaN`, `Infinity` and negatives.
   - Vitest: `math.test.ts` and `format.test.ts` (16 tests). Nothing imports the constants yet; the static UI still has hardcoded values.
+
+- **Audio Engine:** Added the React-free Web Audio layer that later features (stores, drop zone, render loop) build on; not yet called from the UI.
+  - `src/audio/AudioEngine.ts`: owns the `<audio>` element and graph source → low shelf (200 Hz) → mid peaking (1 kHz) → high shelf (4 kHz) → gain → analyser → destination. Lazy idempotent `init()`; `loadFile` / `loadUrl` resolve with `TrackMeta`; `play` (resumes context, maps `NotAllowedError` to `autoplay-blocked`), `pause`, `seek`, `setLoop`, `setPlaybackRate`, `setPreservePitch`, `setVolume`, `setMuted`, `setGain`, `setEqBand`, `setFftSize`, `setSmoothing`, `getFrequencyData`, `getTimeDomainData`, `getBands`, typed `on()` events, `dispose()`.
+  - Typed `AudioEngineError` codes: `not-initialized`, `autoplay-blocked`, `unsupported-format`, `load-failed`. Parameters are clamped to shared constants and changed with `setTargetAtTime`; object URLs are revoked on track change and dispose.
+  - Browser dependencies are injected through `EngineEnv`, so tests use fakes. `src/audio/engine.ts` provides the lazy singleton `getAudioEngine()` with HMR dispose.
+  - `src/audio/bands.ts`: `binToFrequency`, `frequencyToBin`, `rangeEnergy`, `getBandEnergy`.
+  - Tests: `bands.test.ts` and `AudioEngine.test.ts` (22 tests; 38 total). Real audio output still needs a check by ear once the UI is wired.
