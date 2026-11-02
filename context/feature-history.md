@@ -26,3 +26,10 @@
   - Browser dependencies are injected through `EngineEnv`, so tests use fakes. `src/audio/engine.ts` provides the lazy singleton `getAudioEngine()` with HMR dispose.
   - `src/audio/bands.ts`: `binToFrequency`, `frequencyToBin`, `rangeEnergy`, `getBandEnergy`.
   - Tests: `bands.test.ts` and `AudioEngine.test.ts` (22 tests; 38 total). Real audio output still needs a check by ear once the UI is wired.
+
+- **State Stores:** Added the Zustand state layer and wired it to the audio engine; the UI controls are still static and get connected by later features.
+  - `src/store/playbackStore.ts` (status, track, time, duration, loop, error; `setError` moves to `error`, `reset` keeps `loop`), `audioStore.ts` (volume, muted, gain, speed, preservePitch, per-band EQ, eqBypass; persisted as `av-audio`), `visualizerStore.ts` (mode, theme, settings; persisted as `av-visualizer`), `uiStore.ts` (sidebar, controls sheet, tab, fullscreen; only `sidebarOpen` persisted as `av-ui`). All setters clamp to the shared constants.
+  - Persistence uses `version: 1`, `partialize`, and `migrate`/`merge` that run `sanitize*` functions so corrupted or outdated data falls back to valid defaults; `src/lib/safeStorage.ts` falls back to in-memory storage when localStorage is unavailable. Helpers: `src/lib/sanitize.ts`, `throttle.ts`, `eqPresets.ts` (Flat, Bass Boost, Vocal, Treble, Lo-Fi), plus new visualizer constants.
+  - `src/audio/bindEngineToStore.ts` applies store values to the engine through per-field selector subscriptions (EQ uses `shallow`, flat while bypassed) and re-applies everything on the new engine `initialized` event; the engine gained `isInitialized`.
+  - `src/hooks/useAudioEvents.ts` mirrors engine events into the playback store (time throttled to about 10 Hz); `App.tsx` mounts it and the binding.
+  - Tests: 36 new (74 total) covering store clamping, presets, sanitize/migrate/merge, binding with a mocked engine, throttle and EQ presets.
