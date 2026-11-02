@@ -1,18 +1,30 @@
 # Current Feature
 
-<!-- Feature name and short description -->
+File Drop Zone (see `context/features/file-drop-zone.md`): drag and drop (or pick) an audio file to load it into the engine and start playback.
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- [ ] `src/lib/validateAudioFile.ts`: MIME/extension and size validation with a user-facing message
+- [ ] `useFileDrop` hook: window-level drag and drop, drag-over state, no browser navigation to the file
+- [ ] Drag-over overlay: "Release to play"
+- [ ] File picker button (hidden input, keyboard accessible)
+- [ ] `loadAudioFile`: validate → init engine on the gesture → load → set track → autoplay
+- [ ] Error toasts for invalid files, decode failures and blocked autoplay; state returns to idle
+- [ ] Loading state while metadata loads; stale loads ignored when a second file is dropped
+- [ ] Multiple files: use the first valid one and say the rest were ignored
+- [ ] Vitest tests for `validateAudioFile`
+- [ ] `npm test`, `npm run lint` and `npm run build` pass
 
 ## Notes
 
-<!-- Any extra notes -->
+- The drop or click is the user gesture that creates and resumes the `AudioContext`.
+- Track name comes from the file name without its extension (done in the engine).
+- Playback controls and the visualizer are not wired yet, so a dropped file plays but only the audio is observable; that comes with `player-controls` and `canvas-render-loop`.
+- "Use a preset" stays inert until the preset library feature.
 
 ## Completed Features
 

@@ -75,4 +75,17 @@ export const ACCEPTED_AUDIO_EXTENSIONS = [
   '.flac',
   '.m4a',
 ] as const
+export const ACCEPTED_AUDIO_MIME_TYPES = [
+  'audio/mpeg',
+  'audio/mp3',
+  'audio/wav',
+  'audio/x-wav',
+  'audio/wave',
+  'audio/ogg',
+  'audio/flac',
+  'audio/x-flac',
+  'audio/mp4',
+  'audio/x-m4a',
+  'audio/m4a',
+] as const
 export const MAX_AUDIO_FILE_BYTES = 100 * 1024 * 1024
