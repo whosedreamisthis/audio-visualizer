@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Maximize, Music, SlidersHorizontal } from 'lucide-react'
+import { Maximize, SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -13,6 +13,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { AppLogo } from '@/components/AppLogo'
 import { CanvasStage } from '@/components/CanvasStage'
 import { ControlPanel } from '@/components/ControlPanel'
 import { OpenFileButton } from '@/components/OpenFileButton'
@@ -36,7 +37,7 @@ function App() {
     <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
       <header className="flex h-14 shrink-0 items-center justify-between border-b px-3 pt-[env(safe-area-inset-top)] sm:px-4">
         <div className="flex items-center gap-2">
-          <Music className="size-5" aria-hidden />
+          <AppLogo className="size-5" />
           <h1 className="text-sm font-semibold">Audio Visualizer Studio</h1>
         </div>
         <div className="flex items-center gap-1">
