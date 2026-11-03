@@ -1,6 +1,12 @@
 import { create } from 'zustand'
-import { subscribeWithSelector } from 'zustand/middleware'
+import {
+  createJSONStorage,
+  persist,
+  subscribeWithSelector,
+} from 'zustand/middleware'
 import { clamp } from '@/lib/math'
+import { isRecord, readBoolean } from '@/lib/sanitize'
+import { getSafeStorage } from '@/lib/safeStorage'
 import type { TrackMeta } from '@/types'
 
 export type PlaybackStatus =
@@ -49,30 +55,50 @@ function safeDuration(seconds: number): number {
 }
 
 export const usePlaybackStore = create<PlaybackState>()(
-  subscribeWithSelector((set, get) => ({
-    ...initialData,
+  subscribeWithSelector(
+    persist(
+      (set, get) => ({
+        ...initialData,
 
-    setTrack: (track) =>
-      set({
-        track,
-        status: track ? 'ready' : 'idle',
-        currentTime: 0,
-        duration: track ? safeDuration(track.duration) : 0,
-        error: null,
+        setTrack: (track) =>
+          set({
+            track,
+            status: track ? 'ready' : 'idle',
+            currentTime: 0,
+            duration: track ? safeDuration(track.duration) : 0,
+            error: null,
+          }),
+        setStatus: (status) => set({ status }),
+        setTime: (seconds) =>
+          set({ currentTime: clamp(seconds, 0, get().duration || Infinity) }),
+        setDuration: (seconds) => set({ duration: safeDuration(seconds) }),
+        setLoop: (loop) => set({ loop }),
+        toggleLoop: () => set((s) => ({ loop: !s.loop })),
+        setError: (message) =>
+          set(
+            message === null
+              ? { error: null }
+              : { error: message, status: 'error' },
+          ),
+        // `loop` is a user preference, so it survives a reset
+        reset: () => set({ ...initialData, loop: get().loop }),
       }),
-    setStatus: (status) => set({ status }),
-    setTime: (seconds) =>
-      set({ currentTime: clamp(seconds, 0, get().duration || Infinity) }),
-    setDuration: (seconds) => set({ duration: safeDuration(seconds) }),
-    setLoop: (loop) => set({ loop }),
-    toggleLoop: () => set((s) => ({ loop: !s.loop })),
-    setError: (message) =>
-      set(
-        message === null
-          ? { error: null }
-          : { error: message, status: 'error' },
-      ),
-    // `loop` is a user preference, so it survives a reset
-    reset: () => set({ ...initialData, loop: get().loop }),
-  })),
+      {
+        name: 'av-playback',
+        version: 1,
+        storage: createJSONStorage(getSafeStorage),
+        partialize: (s) => ({ loop: s.loop }),
+        migrate: (persisted) => ({
+          loop: readBoolean(isRecord(persisted) ? persisted.loop : undefined, false),
+        }),
+        merge: (persisted, current) => ({
+          ...current,
+          loop: readBoolean(
+            isRecord(persisted) ? persisted.loop : undefined,
+            current.loop,
+          ),
+        }),
+      },
+    ),
+  ),
 )
