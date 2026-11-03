@@ -92,6 +92,7 @@ export function PlayerBar() {
           <div className="flex items-center justify-center gap-1">
             <IconButton
               label="Restart"
+              className="active:bg-white/25 dark:active:bg-white/25"
               disabled={!canTransport}
               onClick={() => seekTo(0)}
             >
@@ -110,6 +111,7 @@ export function PlayerBar() {
               label={loop ? 'Loop on' : 'Loop off'}
               aria-pressed={loop}
               variant={loop ? 'secondary' : 'ghost'}
+              className={loop ? 'bg-white/25 hover:bg-white/30' : undefined}
               onClick={toggleLoop}
             >
               <Repeat />

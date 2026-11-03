@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/tooltip'
 import { CanvasStage } from '@/components/CanvasStage'
 import { ControlPanel } from '@/components/ControlPanel'
+import { OpenFileButton } from '@/components/OpenFileButton'
 import { PlayerBar } from '@/components/PlayerBar'
 import { bindEngineToStore } from '@/audio/bindEngineToStore'
 import { getAudioEngine } from '@/audio/engine'
@@ -37,6 +38,7 @@ function App() {
           <h1 className="text-sm font-semibold">Audio Visualizer Studio</h1>
         </div>
         <div className="flex items-center gap-1">
+          <OpenFileButton />
           {!isDesktop && (
             <Button
               variant="outline"

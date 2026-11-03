@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { FolderOpen, ListMusic, Loader2, Upload } from 'lucide-react'
 import { handleAudioFiles } from '@/audio/loadAudioFile'
+import { AudioFileInput } from '@/components/AudioFileInput'
 import { FpsMeter } from '@/components/FpsMeter'
 import { VisualizerCanvas } from '@/components/VisualizerCanvas'
 import { Button } from '@/components/ui/button'
@@ -11,7 +12,6 @@ import { usePlaybackStore } from '@/store/playbackStore'
 const SHOW_FPS =
   import.meta.env.DEV && new URLSearchParams(window.location.search).has('fps')
 
-const FILE_ACCEPT = `audio/*,${ACCEPTED_AUDIO_EXTENSIONS.join(',')}`
 const FORMATS_LABEL = ACCEPTED_AUDIO_EXTENSIONS.map((ext) =>
   ext.slice(1).toUpperCase(),
 ).join(', ')
@@ -30,19 +30,7 @@ export function CanvasStage() {
       <VisualizerCanvas />
       {SHOW_FPS && <FpsMeter />}
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept={FILE_ACCEPT}
-        multiple
-        className="hidden"
-        aria-label="Choose an audio file"
-        onChange={(event) => {
-          const files = Array.from(event.target.files ?? [])
-          event.target.value = '' // allow picking the same file again
-          void handleAudioFiles(files)
-        }}
-      />
+      <AudioFileInput ref={inputRef} />
 
       {showCard && (
         <div className="absolute inset-0 grid place-items-center p-4">
