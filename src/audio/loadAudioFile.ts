@@ -1,6 +1,7 @@
 import { toast } from 'sonner'
 import { validateAudioFile } from '@/lib/validateAudioFile'
 import { usePlaybackStore } from '@/store/playbackStore'
+import { useUiStore } from '@/store/uiStore'
 import { AudioEngineError } from './AudioEngine'
 import { getAudioEngine } from './engine'
 
@@ -16,6 +17,7 @@ export async function loadAudioFile(file: File): Promise<void> {
   }
 
   const token = ++loadToken
+  useUiStore.getState().setSourcePickerOpen(false)
   const engine = getAudioEngine()
   const playback = () => usePlaybackStore.getState()
 

@@ -10,6 +10,8 @@ interface UiData {
   sidebarOpen: boolean
   /** Controls sheet open on tablet and mobile. */
   controlsOpen: boolean
+  /** "Load a track or pick a preset" card shown over the visualizer. */
+  sourcePickerOpen: boolean
   activeTab: ControlTab
   fullscreen: boolean
   /** Auto-hide state for the player bar and header in fullscreen. */
@@ -20,6 +22,7 @@ interface UiActions {
   setSidebarOpen: (open: boolean) => void
   toggleSidebar: () => void
   setControlsOpen: (open: boolean) => void
+  setSourcePickerOpen: (open: boolean) => void
   setActiveTab: (tab: ControlTab) => void
   setFullscreen: (fullscreen: boolean) => void
   setControlsVisible: (visible: boolean) => void
@@ -32,6 +35,7 @@ export const useUiStore = create<UiState>()(
     (set) => ({
       sidebarOpen: true,
       controlsOpen: false,
+      sourcePickerOpen: false,
       activeTab: 'mixer',
       fullscreen: false,
       controlsVisible: true,
@@ -39,6 +43,7 @@ export const useUiStore = create<UiState>()(
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
       setControlsOpen: (controlsOpen) => set({ controlsOpen }),
+      setSourcePickerOpen: (sourcePickerOpen) => set({ sourcePickerOpen }),
       setActiveTab: (activeTab) => set({ activeTab }),
       setFullscreen: (fullscreen) => set({ fullscreen }),
       setControlsVisible: (controlsVisible) => set({ controlsVisible }),

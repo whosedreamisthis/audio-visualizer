@@ -1,6 +1,4 @@
-import { useRef } from 'react'
-import { ListMusic } from 'lucide-react'
-import { AudioFileInput } from '@/components/AudioFileInput'
+import { FolderOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Tooltip,
@@ -8,32 +6,29 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { usePlaybackStore } from '@/store/playbackStore'
+import { useUiStore } from '@/store/uiStore'
 
-/** Always-available way to load a track, including while another one is playing. */
+/** Opens the "load a song or pick a preset" card, even while a track is playing. */
 export function OpenFileButton() {
-  const inputRef = useRef<HTMLInputElement>(null)
   const loading = usePlaybackStore((s) => s.status === 'loading')
+  const setSourcePickerOpen = useUiStore((s) => s.setSourcePickerOpen)
 
   return (
-    <>
-      <AudioFileInput ref={inputRef} />
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              variant="outline"
-              className="min-h-11 max-sm:size-11 max-sm:p-0"
-              aria-label="Load song"
-              disabled={loading}
-              onClick={() => inputRef.current?.click()}
-            />
-          }
-        >
-          <ListMusic />
-          <span className="max-sm:hidden">Load song</span>
-        </TooltipTrigger>
-        <TooltipContent>Load a song (or drop one anywhere)</TooltipContent>
-      </Tooltip>
-    </>
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            className="min-h-11 max-sm:size-11 max-sm:p-0"
+            aria-label="Load song"
+            disabled={loading}
+            onClick={() => setSourcePickerOpen(true)}
+          />
+        }
+      >
+        <FolderOpen />
+        <span className="max-sm:hidden">Load song</span>
+      </TooltipTrigger>
+      <TooltipContent>Load a song or pick a preset</TooltipContent>
+    </Tooltip>
   )
 }
