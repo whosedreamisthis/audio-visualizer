@@ -25,6 +25,7 @@ export type AudioEngineErrorCode =
   | 'autoplay-blocked'
   | 'unsupported-format'
   | 'load-failed'
+  | 'aborted'
 
 export class AudioEngineError extends Error {
   readonly code: AudioEngineErrorCode
@@ -89,6 +90,8 @@ export class AudioEngine {
   private analyser: AnalyserNode | null = null
   private objectUrl: string | null = null
   private trackCounter = 0
+  /** Detaches the listeners of the load in flight and rejects it; null when idle. */
+  private cancelPendingLoad: (() => void) | null = null
   private freqBuffer: ByteBuffer = new Uint8Array(0)
 
   private readonly listeners: {
@@ -178,13 +181,20 @@ export class AudioEngine {
 
   private load(src: string, info: LoadInfo): Promise<TrackMeta> {
     const audio = this.requireAudio()
+    this.cancelPendingLoad?.()
     audio.pause()
 
     return new Promise<TrackMeta>((resolve, reject) => {
       const cleanup = () => {
         audio.removeEventListener('loadedmetadata', onReady)
         audio.removeEventListener('error', onFail)
+        if (this.cancelPendingLoad === cancel) this.cancelPendingLoad = null
       }
+      const cancel = () => {
+        cleanup()
+        reject(new AudioEngineError('aborted', 'Loading was replaced by a newer track.'))
+      }
+      this.cancelPendingLoad = cancel
       const onReady = () => {
         cleanup()
         this.trackCounter += 1
@@ -371,6 +381,7 @@ export class AudioEngine {
 
   /** Stop playback, disconnect the graph, revoke URLs and close the context. */
   dispose(): void {
+    this.cancelPendingLoad?.()
     const audio = this.audio
     if (audio) {
       audio.pause()

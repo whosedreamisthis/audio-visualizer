@@ -161,6 +161,21 @@ describe('AudioEngine', () => {
     expect(env.revokeObjectURL).toHaveBeenCalledWith('blob:fake')
   })
 
+  it('aborts a pending load when a newer one starts, leaving a single listener set', async () => {
+    const { env, audio } = createFakes()
+    const engine = new AudioEngine(env)
+    const removeSpy = vi.spyOn(audio, 'removeEventListener')
+
+    const stale = engine.loadFile(new File(['x'], 'stale.mp3'))
+    const fresh = engine.loadFile(new File(['y'], 'fresh.mp3'))
+    await expect(stale).rejects.toMatchObject({ code: 'aborted' })
+    expect(removeSpy).toHaveBeenCalledWith('loadedmetadata', expect.any(Function))
+    expect(removeSpy).toHaveBeenCalledWith('error', expect.any(Function))
+
+    audio.dispatchEvent(new Event('loadedmetadata'))
+    await expect(fresh).resolves.toMatchObject({ name: 'fresh' })
+  })
+
   it('rejects with unsupported-format on a decode error', async () => {
     const { env, audio } = createFakes()
     const engine = new AudioEngine(env)
@@ -219,7 +234,7 @@ describe('AudioEngine', () => {
   it('dispose() disconnects the graph, revokes URLs and closes the context', () => {
     const { env, ctx, source, gain, analyser, audio } = createFakes()
     const engine = new AudioEngine(env)
-    void engine.loadFile(new File(['x'], 'song.mp3'))
+    engine.loadFile(new File(['x'], 'song.mp3')).catch(() => {})
 
     engine.dispose()
 
