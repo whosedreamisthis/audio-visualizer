@@ -3,6 +3,7 @@ import {
   byteToUnit,
   fillWaveformPoints,
   peakAmplitude,
+  smoothPoints,
   trackWavePeak,
   waveformGain,
   waveformPointCount,
@@ -48,19 +49,13 @@ describe('fillWaveformPoints', () => {
   })
 
   it('samples evenly across the data when downsampling', () => {
-    // 8 samples ramping 128 → 128+7*16; 4 points pick indices 0, 2, 4, 6
+    // 8 samples ramping 128 → 128+7*16; the first and last points hit the ends
     const wave = Uint8Array.from({ length: 8 }, (_, i) => 128 + i * 16)
     const out = new Float32Array(4)
     fillWaveformPoints(out, wave, 0, 128)
-    expect(Array.from(out)).toEqual([0, 32, 64, 96])
-  })
-
-  it('repeats samples when there are more points than data', () => {
-    const out = new Float32Array(4)
-    fillWaveformPoints(out, Uint8Array.from([0, 255]), 0, 1)
-    expect(out[0]).toBe(out[1])
-    expect(out[2]).toBe(out[3])
-    expect(out[0]).toBeLessThan(out[2])
+    expect(out[0]).toBeCloseTo(0)
+    expect(out[3]).toBeCloseTo(112)
+    expect(out[1]).toBeGreaterThan(out[0])
   })
 
   it('falls back to the center when there is no data', () => {
@@ -89,5 +84,24 @@ describe('auto gain', () => {
     expect(waveformGain(1)).toBe(1)
     expect(waveformGain(0.2)).toBeCloseTo(4.25)
     expect(waveformGain(0)).toBeLessThanOrEqual(8)
+  })
+})
+
+describe('smoothPoints and interpolation', () => {
+  it('interpolates upsampled data instead of repeating samples', () => {
+    const out = new Float32Array(5)
+    fillWaveformPoints(out, new Uint8Array([128, 256 - 1]), 0, 100)
+    expect(out[0]).toBeCloseTo(0)
+    expect(out[2]).toBeGreaterThan(out[1])
+    expect(out[1]).toBeGreaterThan(out[0])
+  })
+
+  it('rounds a step edge while keeping the end points', () => {
+    const ys = new Float32Array([0, 0, 0, 10, 10, 10])
+    smoothPoints(ys, 2)
+    expect(ys[0]).toBe(0)
+    expect(ys[5]).toBe(10)
+    expect(ys[2]).toBeGreaterThan(0)
+    expect(ys[3]).toBeLessThan(10)
   })
 })
