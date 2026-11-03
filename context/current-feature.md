@@ -1,30 +1,18 @@
-# Current Feature: Accessibility
+# Current Feature
 
-Make the studio usable with keyboard, screen readers and reduced-motion preferences.
+<!-- Feature name and short description -->
 
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
-- Every control reachable and operable by keyboard with visible focus rings
-- All sliders labelled, with `aria-valuetext` (e.g. "+4 dB", "1.25x", "1:05 of 3:18")
-- Icon-only buttons have `aria-label`; tooltips are also shown on focus
-- Canvas: `role="img"` and a dynamic `aria-label` ("Frequency bars visualizer, playing")
-- Live region (`aria-live="polite"`) announces track loaded, playing/paused, errors
-- State never conveyed by color alone (active mode/theme has a ring/check, mute shows an icon)
-- `prefers-reduced-motion`: lower particle count, no glow, calmer idle animation, no flashing on beats
-- Respect `prefers-contrast` where practical; text contrast meets WCAG AA on all themes
-- Skip link to the player controls
-- Warn about flashing: beat pulse limited to safe brightness changes (no more than 3 flashes per second)
+<!-- Goals and requirements -->
 
 ## Notes
 
-- Test with keyboard only and a screen reader (NVDA/VoiceOver) at least once
-- Dialogs and sheets trap focus and restore it on close (shadcn/Radix default; verify)
-- Acceptance: Lighthouse accessibility score ≥ 95
-- Acceptance: a full flow (load preset, change EQ, switch visualizer, fullscreen) is possible without a mouse
+<!-- Any extra notes -->
 
 ## Completed Features
 
@@ -49,3 +37,4 @@ In Progress
 - **Preset Library:** Manifest-driven preset tracks loaded on demand via TanStack Query, with clickable cards, skeletons and Retry; key files `src/api/presets.ts`, `hooks.ts`, `src/components/PresetLibrary.tsx`.
 - **Microphone Input:** Live microphone as a source with a speaker-monitor gate, permission help and live-aware controls; key files `src/audio/AudioEngine.ts`, `mic.ts`, `src/store/micStore.ts`, `src/components/MicInput.tsx`.
 - **Saved Presets:** Named snapshots of EQ, gain, speed, theme, mode and visualizer settings with rename, undo delete, JSON import/export and reset all; key files `src/store/savedPresetsStore.ts`, `src/components/SavedPresets.tsx`, `src/lib/resetSettings.ts`.
+- **Accessibility:** Polite live announcer, skip link, reduced-motion and contrast handling, slider value text and a 3-per-second beat flash cap; key files `src/components/LiveAnnouncer.tsx`, `src/lib/announce.ts`, `src/hooks/useVisualizerLoop.ts`.

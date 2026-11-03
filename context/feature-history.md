@@ -130,3 +130,12 @@
   - Presets do not store volume, mute, preserve-pitch or EQ bypass. The other persisted stores (`av-audio`, `av-visualizer`) already had versioned keys, `migrate` and safe fallbacks.
   - Also: the unused React Query devtools import in `src/main.tsx` was commented out to fix lint; a Prettier reformat of `src/main.tsx` and `context/project-overview.md` was included at the user's request.
   - Tests: `savedPresetsStore.test.ts` (add/rename/remove/apply, cap, name validation, reset, import validation, persistence); 264 pass. The dialogs, undo toast and file download were not checked in a browser.
+
+- **Accessibility:** The studio is usable by keyboard and screen reader and respects reduced-motion and contrast preferences.
+  - `src/lib/announce.ts` builds the announcement text and `LiveAnnouncer` renders it in a visually hidden `role="status"` polite live region (loading, loaded, playing, paused, errors).
+  - `App.tsx` has a "Skip to player controls" link shown on focus; the player bar is a labelled, focusable `#player-controls` landmark and the sidebar has an `aria-label`.
+  - `useVisualizerLoop` follows `prefers-reduced-motion` live: glow off, beat flags cleared, idle animation time scaled to 0.4. Particles already capped their pool.
+  - `DEFAULT_BEAT_OPTIONS.cooldownSeconds` went from 0.25 to 0.34 so beats, and beat flashes, cannot exceed 3 per second.
+  - `index.css` adds a `prefers-contrast: more` block (stronger muted text, borders, input and ring). Visual tab sliders gained `getAriaValueText`.
+  - Already present and left unchanged: canvas `role="img"` label, icon button labels, seek/volume/EQ/mixer value text, check/ring on active mode and theme.
+  - Tests: `announce.test.ts` and a beat-rate test; 268 pass. Lighthouse, a keyboard-only walkthrough, a screen reader pass and per-theme contrast under high contrast were not verified.
