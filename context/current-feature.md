@@ -1,30 +1,18 @@
-# Current Feature: Saved Presets and Persistence
+# Current Feature
 
 <!-- Feature name and short description -->
 
-Let users save named combinations of EQ, theme, mode and visualizer settings, and make sure all preferences survive reloads.
-
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
-- `src/store/savedPresetsStore.ts` (persisted): `{ id, name, eq, gain, speed, themeId, mode, settings, createdAt }[]`
-- Actions: `add`, `rename`, `remove`, `apply`
-- `SavedPresets` component in the "Presets" tab: save dialog (shadcn Dialog/Sheet with name input), list with apply / rename / delete
-- Duplicate/empty name handling; max 20 presets
-- Confirm before deleting (undo toast as an alternative)
-- Export/import presets as JSON (stretch)
-- Verify persisted stores: versioned keys (`av-audio`, `av-visualizer`, `av-presets`), `migrate`, safe fallback on bad data
-- "Reset all settings" action
+<!-- Goals and requirements -->
 
 ## Notes
 
-- Applying a preset updates audio, visualizer and theme stores in one batch so the engine receives consistent values
-- Imported JSON is validated before use
-- Tests (Vitest): add/rename/remove/apply behavior, max limit, name validation; import validator rejects malformed data
-- Acceptance: save a preset, change settings, apply the preset and everything returns; presets persist across reloads
+<!-- Any extra notes -->
 
 ## Completed Features
 
@@ -48,3 +36,4 @@ In Progress
 - **Keyboard Shortcuts and Fullscreen:** Global key shortcuts, page fullscreen with auto-hiding controls and cursor, `?` help dialog and HUD toasts; key files `src/lib/shortcuts.ts`, `src/hooks/useKeyboardShortcuts.ts`, `useFullscreen.ts`.
 - **Preset Library:** Manifest-driven preset tracks loaded on demand via TanStack Query, with clickable cards, skeletons and Retry; key files `src/api/presets.ts`, `hooks.ts`, `src/components/PresetLibrary.tsx`.
 - **Microphone Input:** Live microphone as a source with a speaker-monitor gate, permission help and live-aware controls; key files `src/audio/AudioEngine.ts`, `mic.ts`, `src/store/micStore.ts`, `src/components/MicInput.tsx`.
+- **Saved Presets:** Named snapshots of EQ, gain, speed, theme, mode and visualizer settings with rename, undo delete, JSON import/export and reset all; key files `src/store/savedPresetsStore.ts`, `src/components/SavedPresets.tsx`, `src/lib/resetSettings.ts`.
