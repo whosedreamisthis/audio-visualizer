@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAudioStore } from '@/store/audioStore'
+import { useMicStore } from '@/store/micStore'
 import { usePlaybackStore } from '@/store/playbackStore'
 import { useVisualizerStore } from '@/store/visualizerStore'
 import type { AudioEngine } from './AudioEngine'
@@ -18,6 +19,7 @@ function createFakeEngine(initialized: boolean) {
     setFftSize: vi.fn(),
     setSmoothing: vi.fn(),
     setLoop: vi.fn(),
+    setMonitor: vi.fn(),
     on: vi.fn((event: string, handler: () => void) => {
       if (event === 'initialized') handlers.add(handler)
       return () => handlers.delete(handler)
@@ -39,6 +41,7 @@ beforeEach(() => {
   useAudioStore.setState(useAudioStore.getInitialState())
   useVisualizerStore.setState(useVisualizerStore.getInitialState())
   usePlaybackStore.setState(usePlaybackStore.getInitialState())
+  useMicStore.setState(useMicStore.getInitialState())
 })
 
 afterEach(() => {
@@ -97,6 +100,15 @@ describe('bindEngineToStore', () => {
     expect(engine.setFftSize).toHaveBeenCalledWith(1024)
     expect(engine.setSmoothing).toHaveBeenCalledWith(0.5)
     expect(engine.setLoop).toHaveBeenCalledWith(true)
+  })
+
+  it('starts with monitoring off and forwards the monitor switch', () => {
+    const { engine, asEngine } = createFakeEngine(true)
+    unbind = bindEngineToStore(asEngine)
+    expect(engine.setMonitor).toHaveBeenCalledWith(false)
+
+    useMicStore.getState().setMonitor(true)
+    expect(engine.setMonitor).toHaveBeenLastCalledWith(true)
   })
 
   it('only updates what changed', () => {

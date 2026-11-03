@@ -1,6 +1,7 @@
 import { shallow } from 'zustand/shallow'
 import { EQ_BANDS, EQ_FLAT } from '@/lib/constants'
 import { useAudioStore, type AudioState } from '@/store/audioStore'
+import { useMicStore } from '@/store/micStore'
 import { usePlaybackStore } from '@/store/playbackStore'
 import { useVisualizerStore } from '@/store/visualizerStore'
 import type { AudioEngine } from './AudioEngine'
@@ -34,6 +35,7 @@ export function bindEngineToStore(engine: AudioEngine): () => void {
     engine.setFftSize(settings.fftSize)
     engine.setSmoothing(settings.smoothing)
     engine.setLoop(usePlaybackStore.getState().loop)
+    engine.setMonitor(useMicStore.getState().monitor)
   }
 
   const unsubscribers = [
@@ -72,6 +74,10 @@ export function bindEngineToStore(engine: AudioEngine): () => void {
     usePlaybackStore.subscribe(
       (s) => s.loop,
       (loop) => whenReady(() => engine.setLoop(loop)),
+    ),
+    useMicStore.subscribe(
+      (s) => s.monitor,
+      (monitor) => whenReady(() => engine.setMonitor(monitor)),
     ),
   ]
 

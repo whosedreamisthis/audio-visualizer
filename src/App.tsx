@@ -26,6 +26,7 @@ import { useApplyTheme } from '@/hooks/useApplyTheme'
 import { useFullscreen } from '@/hooks/useFullscreen'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useMicPermission } from '@/hooks/useMicPermission'
 import { isFullscreenSupported, toggleFullscreen } from '@/lib/fullscreen'
 import { cn } from '@/lib/utils'
 import { useUiStore } from '@/store/uiStore'
@@ -37,6 +38,7 @@ function App() {
   useApplyTheme()
   useFullscreen()
   useKeyboardShortcuts()
+  useMicPermission()
   useEffect(() => bindEngineToStore(getAudioEngine()), [])
 
   const controlsOpen = useUiStore((s) => s.controlsOpen)

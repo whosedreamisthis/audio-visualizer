@@ -1,5 +1,6 @@
-import { Mic, Save } from 'lucide-react'
+import { Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { MicInput } from '@/components/MicInput'
 import { PresetLibrary } from '@/components/PresetLibrary'
 import { Separator } from '@/components/ui/separator'
 
@@ -15,9 +16,7 @@ export function PresetsPanel() {
 
       <section className="space-y-2">
         <h3 className="text-sm font-medium">Input</h3>
-        <Button variant="outline" className="min-h-11 w-full justify-start gap-2">
-          <Mic /> Use microphone
-        </Button>
+        <MicInput />
       </section>
 
       <Separator />

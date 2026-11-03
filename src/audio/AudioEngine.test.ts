@@ -2,14 +2,19 @@ import { describe, expect, it, vi } from 'vitest'
 import { AudioEngine, AudioEngineError, type EngineEnv } from './AudioEngine'
 
 function fakeParam(value = 0) {
-  return { value, setTargetAtTime: vi.fn() }
+  return {
+    value,
+    setTargetAtTime: vi.fn(),
+    setValueAtTime: vi.fn(),
+    cancelScheduledValues: vi.fn(),
+  }
 }
 
 function fakeNode() {
   return { connect: vi.fn(), disconnect: vi.fn() }
 }
 
-function createFakes(options: { playError?: string } = {}) {
+function createFakes(options: { playError?: string; micError?: string } = {}) {
   const analyser = {
     ...fakeNode(),
     fftSize: 2048,
@@ -18,7 +23,16 @@ function createFakes(options: { playError?: string } = {}) {
     getByteFrequencyData: vi.fn(),
     getByteTimeDomainData: vi.fn(),
   }
+  // The engine creates the master gain first, then the monitor gate before the speakers
   const gain = { ...fakeNode(), gain: fakeParam(1) }
+  const monitorGain = { ...fakeNode(), gain: fakeParam(1) }
+  let gainsCreated = 0
+  const micTrack = Object.assign(new EventTarget(), { stop: vi.fn() })
+  const micStream = {
+    getTracks: () => [micTrack],
+    getAudioTracks: () => [micTrack],
+  }
+  const micSource = fakeNode()
   const filters: Array<ReturnType<typeof fakeFilter>> = []
   function fakeFilter() {
     return {
@@ -43,8 +57,9 @@ function createFakes(options: { playError?: string } = {}) {
       filters.push(filter)
       return filter
     }),
-    createGain: vi.fn(() => gain),
+    createGain: vi.fn(() => (gainsCreated++ === 0 ? gain : monitorGain)),
     createAnalyser: vi.fn(() => analyser),
+    createMediaStreamSource: vi.fn(() => micSource),
   }
 
   const audio = Object.assign(new EventTarget(), {
@@ -74,9 +89,25 @@ function createFakes(options: { playError?: string } = {}) {
     createContext: vi.fn(() => ctx as unknown as AudioContext),
     createObjectURL: vi.fn(() => 'blob:fake'),
     revokeObjectURL: vi.fn(),
+    getUserMedia: vi.fn(() =>
+      options.micError
+        ? Promise.reject(Object.assign(new Error('mic'), { name: options.micError }))
+        : Promise.resolve(micStream as unknown as MediaStream),
+    ),
   }
 
-  return { env, ctx, audio, analyser, gain, filters, source }
+  return {
+    env,
+    ctx,
+    audio,
+    analyser,
+    gain,
+    monitorGain,
+    filters,
+    source,
+    micTrack,
+    micSource,
+  }
 }
 
 describe('AudioEngine', () => {
@@ -107,8 +138,8 @@ describe('AudioEngine', () => {
     expect(handler).toHaveBeenCalledTimes(1)
   })
 
-  it('connects source → filters → gain → analyser → destination', () => {
-    const { env, ctx, source, filters, gain, analyser } = createFakes()
+  it('connects source → filters → gain → analyser → monitor → destination', () => {
+    const { env, ctx, source, filters, gain, analyser, monitorGain } = createFakes()
     new AudioEngine(env).init()
 
     expect(source.connect).toHaveBeenCalledWith(filters[0])
@@ -116,7 +147,8 @@ describe('AudioEngine', () => {
     expect(filters[1].connect).toHaveBeenCalledWith(filters[2])
     expect(filters[2].connect).toHaveBeenCalledWith(gain)
     expect(gain.connect).toHaveBeenCalledWith(analyser)
-    expect(analyser.connect).toHaveBeenCalledWith(ctx.destination)
+    expect(analyser.connect).toHaveBeenCalledWith(monitorGain)
+    expect(monitorGain.connect).toHaveBeenCalledWith(ctx.destination)
   })
 
   it('clamps and ramps gain and EQ changes', () => {
@@ -254,5 +286,187 @@ describe('AudioEngine', () => {
     engine.init()
 
     expect(env.createContext).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('AudioEngine microphone', () => {
+  it('connects the mic into the EQ chain and keeps it off the speakers by default', async () => {
+    const { env, ctx, filters, micSource, monitorGain } = createFakes()
+    const engine = new AudioEngine(env)
+
+    const meta = await engine.useMicrophone()
+
+    expect(ctx.createMediaStreamSource).toHaveBeenCalled()
+    expect(micSource.connect).toHaveBeenCalledWith(filters[0])
+    expect(monitorGain.gain.setValueAtTime).toHaveBeenLastCalledWith(0, 0)
+    expect(engine.isMicActive).toBe(true)
+    expect(meta).toMatchObject({ name: 'Microphone', source: 'mic', duration: 0 })
+  })
+
+  it('requests raw audio unless processing is asked for', async () => {
+    const { env } = createFakes()
+    const engine = new AudioEngine(env)
+
+    await engine.useMicrophone()
+    expect(env.getUserMedia).toHaveBeenLastCalledWith({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    })
+
+    await engine.useMicrophone({ processing: true })
+    expect(env.getUserMedia).toHaveBeenLastCalledWith({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    })
+  })
+
+  it('resumes the context from the click that asked for the mic', async () => {
+    const { env, ctx } = createFakes()
+    await new AudioEngine(env).useMicrophone()
+    expect(ctx.resume).toHaveBeenCalled()
+  })
+
+  it('plays the mic through the speakers only while monitoring, following volume and mute', async () => {
+    const { env, monitorGain } = createFakes()
+    const engine = new AudioEngine(env)
+    await engine.useMicrophone()
+    const ramp = monitorGain.gain.setTargetAtTime
+
+    engine.setMonitor(true)
+    expect(ramp).toHaveBeenLastCalledWith(1, 0, expect.any(Number))
+
+    engine.setVolume(0.4)
+    expect(ramp).toHaveBeenLastCalledWith(0.4, 0, expect.any(Number))
+
+    engine.setMuted(true)
+    expect(ramp).toHaveBeenLastCalledWith(0, 0, expect.any(Number))
+
+    engine.setMuted(false)
+    engine.setMonitor(false)
+    expect(ramp).toHaveBeenLastCalledWith(0, 0, expect.any(Number))
+  })
+
+  it('leaves the speaker gate open for files regardless of the monitor setting', () => {
+    const { env, monitorGain } = createFakes()
+    const engine = new AudioEngine(env)
+    engine.init()
+
+    engine.setMonitor(true)
+    engine.setMonitor(false)
+
+    expect(monitorGain.gain.setTargetAtTime).toHaveBeenLastCalledWith(1, 0, expect.any(Number))
+  })
+
+  it('stopMicrophone() stops every track, disconnects the source and reopens the speaker gate', async () => {
+    const { env, micTrack, micSource, monitorGain } = createFakes()
+    const engine = new AudioEngine(env)
+    await engine.useMicrophone()
+
+    engine.stopMicrophone()
+
+    expect(micTrack.stop).toHaveBeenCalled()
+    expect(micSource.disconnect).toHaveBeenCalled()
+    expect(monitorGain.gain.setValueAtTime).toHaveBeenLastCalledWith(1, 0)
+    expect(engine.isMicActive).toBe(false)
+  })
+
+  it('loading a file disconnects the mic', async () => {
+    const { env, audio, micTrack } = createFakes()
+    const engine = new AudioEngine(env)
+    await engine.useMicrophone()
+
+    const pending = engine.loadFile(new File(['x'], 'song.mp3'))
+    audio.dispatchEvent(new Event('loadedmetadata'))
+    await pending
+
+    expect(micTrack.stop).toHaveBeenCalled()
+    expect(engine.isMicActive).toBe(false)
+  })
+
+  it('unloads the file when the mic takes over', async () => {
+    const { env, audio } = createFakes()
+    const engine = new AudioEngine(env)
+    const loading = engine.loadFile(new File(['x'], 'song.mp3'))
+    audio.dispatchEvent(new Event('loadedmetadata'))
+    await loading
+
+    await engine.useMicrophone()
+
+    expect(audio.pause).toHaveBeenCalled()
+    expect(audio.removeAttribute).toHaveBeenCalledWith('src')
+    expect(env.revokeObjectURL).toHaveBeenCalledWith('blob:fake')
+  })
+
+  it('replacing a running mic releases the old stream', async () => {
+    const { env, micTrack } = createFakes()
+    const engine = new AudioEngine(env)
+    await engine.useMicrophone()
+    await engine.useMicrophone({ processing: true })
+
+    expect(micTrack.stop).toHaveBeenCalledTimes(1)
+    expect(engine.isMicActive).toBe(true)
+  })
+
+  it('discards a stream that arrives after the request was cancelled', async () => {
+    const { env, micTrack } = createFakes()
+    const engine = new AudioEngine(env)
+
+    const pending = engine.useMicrophone()
+    engine.stopMicrophone()
+
+    await expect(pending).rejects.toMatchObject({ code: 'aborted' })
+    expect(micTrack.stop).toHaveBeenCalled()
+    expect(engine.isMicActive).toBe(false)
+  })
+
+  it('a pending file load survives a denied permission prompt', async () => {
+    const { env, audio } = createFakes({ micError: 'NotAllowedError' })
+    const engine = new AudioEngine(env)
+    const loading = engine.loadFile(new File(['x'], 'song.mp3'))
+
+    await expect(engine.useMicrophone()).rejects.toMatchObject({ code: 'mic-denied' })
+
+    audio.dispatchEvent(new Event('loadedmetadata'))
+    await expect(loading).resolves.toMatchObject({ name: 'song' })
+  })
+
+  it.each([
+    ['NotAllowedError', 'mic-denied'],
+    ['SecurityError', 'mic-denied'],
+    ['NotFoundError', 'mic-no-device'],
+    ['OverconstrainedError', 'mic-no-device'],
+    ['NotSupportedError', 'mic-unsupported'],
+    ['TypeError', 'mic-unsupported'],
+    ['NotReadableError', 'mic-failed'],
+    ['SomethingElse', 'mic-failed'],
+  ])('maps a %s rejection to %s', async (name, code) => {
+    const { env } = createFakes({ micError: name })
+    const engine = new AudioEngine(env)
+
+    await expect(engine.useMicrophone()).rejects.toMatchObject({ code })
+    expect(engine.isMicActive).toBe(false)
+  })
+
+  it('stops itself and emits micended when the device disappears', async () => {
+    const { env, micTrack } = createFakes()
+    const engine = new AudioEngine(env)
+    const handler = vi.fn()
+    engine.on('micended', handler)
+    await engine.useMicrophone()
+
+    micTrack.dispatchEvent(new Event('ended'))
+
+    expect(handler).toHaveBeenCalledTimes(1)
+    expect(micTrack.stop).toHaveBeenCalled()
+    expect(engine.isMicActive).toBe(false)
+  })
+
+  it('dispose() releases the microphone', async () => {
+    const { env, micTrack } = createFakes()
+    const engine = new AudioEngine(env)
+    await engine.useMicrophone()
+
+    engine.dispose()
+
+    expect(micTrack.stop).toHaveBeenCalled()
+    expect(engine.isMicActive).toBe(false)
   })
 })

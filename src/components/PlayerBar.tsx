@@ -1,4 +1,4 @@
-import { Gauge, Pause, Play, Repeat, RotateCcw } from 'lucide-react'
+import { Gauge, Pause, Play, Repeat, RotateCcw, Square } from 'lucide-react'
 import { seekTo, getTransportAction, togglePlayback } from '@/audio/transport'
 import { SeekBar } from '@/components/SeekBar'
 import { VolumeControl } from '@/components/VolumeControl'
@@ -49,8 +49,10 @@ export function PlayerBar() {
   const toggleLoop = usePlaybackStore((s) => s.toggleLoop)
   const speed = useAudioStore((s) => s.speed)
 
-  const action = getTransportAction(status, track !== null)
+  const live = track?.source === 'mic'
+  const action = getTransportAction(status, track !== null, live)
   const playing = action === 'pause'
+  const stopping = action === 'stop'
   const canTransport = track !== null && status !== 'loading'
 
   const title = track
@@ -93,7 +95,7 @@ export function PlayerBar() {
             <IconButton
               label="Restart"
               className="active:bg-white/25 dark:active:bg-white/25"
-              disabled={!canTransport}
+              disabled={!canTransport || live}
               onClick={() => seekTo(0)}
             >
               <RotateCcw />
@@ -101,14 +103,15 @@ export function PlayerBar() {
             <Button
               size="icon"
               className="size-11 rounded-full"
-              aria-label={playing ? 'Pause' : 'Play'}
+              aria-label={stopping ? 'Stop microphone' : playing ? 'Pause' : 'Play'}
               disabled={!canTransport}
               onClick={() => void togglePlayback()}
             >
-              {playing ? <Pause /> : <Play />}
+              {stopping ? <Square /> : playing ? <Pause /> : <Play />}
             </Button>
             <IconButton
               label={loop ? 'Loop on' : 'Loop off'}
+              disabled={live}
               aria-pressed={loop}
               variant={loop ? 'secondary' : 'ghost'}
               className={loop ? 'bg-white/25 hover:bg-white/30' : undefined}
@@ -122,9 +125,11 @@ export function PlayerBar() {
 
         <div className="hidden items-center justify-end gap-2 md:order-3 md:flex">
           <VolumeControl />
-          <span className="flex shrink-0 items-center gap-1 text-xs tabular-nums text-muted-foreground">
-            <Gauge className="size-4" aria-hidden /> {formatSpeed(speed)}
-          </span>
+          {!live && (
+            <span className="flex shrink-0 items-center gap-1 text-xs tabular-nums text-muted-foreground">
+              <Gauge className="size-4" aria-hidden /> {formatSpeed(speed)}
+            </span>
+          )}
         </div>
       </div>
     </footer>

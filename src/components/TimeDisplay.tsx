@@ -12,6 +12,7 @@ export function TimeDisplay({ which, className }: TimeDisplayProps) {
   const seconds = usePlaybackStore((s) =>
     which === 'current' ? s.currentTime : s.duration,
   )
+  const live = usePlaybackStore((s) => s.track?.source === 'mic')
 
   return (
     <span
@@ -21,7 +22,7 @@ export function TimeDisplay({ which, className }: TimeDisplayProps) {
         className,
       )}
     >
-      {formatTime(seconds)}
+      {live ? (which === 'current' ? 'LIVE' : '') : formatTime(seconds)}
     </span>
   )
 }

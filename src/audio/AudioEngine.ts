@@ -26,6 +26,10 @@ export type AudioEngineErrorCode =
   | 'unsupported-format'
   | 'load-failed'
   | 'aborted'
+  | 'mic-denied'
+  | 'mic-no-device'
+  | 'mic-unsupported'
+  | 'mic-failed'
 
 export class AudioEngineError extends Error {
   readonly code: AudioEngineErrorCode
@@ -48,6 +52,8 @@ export interface EngineEventMap {
   pause: void
   ended: void
   error: AudioEngineError
+  /** The microphone stopped without being asked to (device unplugged, permission revoked, page hidden). */
+  micended: void
 }
 
 type EngineHandler<K extends keyof EngineEventMap> = (
@@ -60,6 +66,7 @@ export interface EngineEnv {
   createContext(): AudioContext
   createObjectURL(blob: Blob): string
   revokeObjectURL(url: string): void
+  getUserMedia(constraints: MediaStreamConstraints): Promise<MediaStream>
 }
 
 const browserEnv: EngineEnv = {
@@ -67,6 +74,53 @@ const browserEnv: EngineEnv = {
   createContext: () => new AudioContext(),
   createObjectURL: (blob) => URL.createObjectURL(blob),
   revokeObjectURL: (url) => URL.revokeObjectURL(url),
+  getUserMedia: (constraints) => {
+    // mediaDevices is undefined on insecure (non-HTTPS) pages
+    if (!navigator.mediaDevices?.getUserMedia) {
+      return Promise.reject(new DOMException('Not available', 'NotSupportedError'))
+    }
+    return navigator.mediaDevices.getUserMedia(constraints)
+  },
+}
+
+const MIC_ERRORS: Record<string, [AudioEngineErrorCode, string]> = {
+  denied: [
+    'mic-denied',
+    'Microphone access is blocked. Allow it from the lock icon in the address bar, then try again.',
+  ],
+  'no-device': ['mic-no-device', 'No microphone was found. Connect one and try again.'],
+  unsupported: [
+    'mic-unsupported',
+    'Microphone input needs a secure (HTTPS) page and a browser that supports it.',
+  ],
+  failed: [
+    'mic-failed',
+    'The microphone could not be started. Another app may be using it.',
+  ],
+}
+
+/** Map a getUserMedia rejection to an engine error. */
+function toMicError(error: unknown): AudioEngineError {
+  const name = (error as { name?: string } | null)?.name
+  let kind = 'failed'
+  if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError') {
+    kind = 'denied'
+  } else if (
+    name === 'NotFoundError' ||
+    name === 'DevicesNotFoundError' ||
+    name === 'OverconstrainedError'
+  ) {
+    kind = 'no-device'
+  } else if (name === 'NotSupportedError' || name === 'TypeError') {
+    kind = 'unsupported'
+  }
+  const [code, message] = MIC_ERRORS[kind]
+  return new AudioEngineError(code, message)
+}
+
+export interface MicrophoneOptions {
+  /** Browser echo cancellation, noise suppression and auto gain. Off by default for accurate visuals. */
+  processing?: boolean
 }
 
 /** Small FFT: fast to compute and still resolves bass bins (~43 Hz each at 44.1 kHz). */
@@ -80,7 +134,8 @@ export interface LoadInfo {
 
 /**
  * Owns the <audio> element and the Web Audio graph:
- * source → low shelf → mid peaking → high shelf → gain → analyser → destination.
+ * source → low shelf → mid peaking → high shelf → gain → analyser → monitor → destination.
+ * The source is the <audio> element, or the microphone while it is active.
  * Framework-agnostic: no React or store imports.
  */
 export class AudioEngine {
@@ -88,6 +143,15 @@ export class AudioEngine {
   private ctx: AudioContext | null = null
   private audio: HTMLAudioElement | null = null
   private source: MediaElementAudioSourceNode | null = null
+  private micSource: MediaStreamAudioSourceNode | null = null
+  private micStream: MediaStream | null = null
+  /** Incremented to cancel a microphone request that is still waiting on getUserMedia. */
+  private micRequest = 0
+  /** Last gate before the speakers: closed for the mic unless monitoring, open for files. */
+  private monitorGain: GainNode | null = null
+  private monitor = false
+  private volume = 1
+  private muted = false
   private filters = new Map<EqBandId, BiquadFilterNode>()
   private gainNode: GainNode | null = null
   private analyser: AnalyserNode | null = null
@@ -110,6 +174,7 @@ export class AudioEngine {
     pause: new Set(),
     ended: new Set(),
     error: new Set(),
+    micended: new Set(),
   }
 
   constructor(env: EngineEnv = browserEnv) {
@@ -149,10 +214,14 @@ export class AudioEngine {
     onsetAnalyser.fftSize = ONSET_FFT_SIZE
     onsetAnalyser.smoothingTimeConstant = 0
 
+    const monitorGain = ctx.createGain()
+    monitorGain.gain.value = 1
+
     previous.connect(gainNode)
     gainNode.connect(analyser)
     gainNode.connect(onsetAnalyser)
-    analyser.connect(ctx.destination)
+    analyser.connect(monitorGain)
+    monitorGain.connect(ctx.destination)
 
     audio.addEventListener('timeupdate', this.onTimeUpdate)
     audio.addEventListener('loadedmetadata', this.onLoadedMetadata)
@@ -165,6 +234,7 @@ export class AudioEngine {
     this.audio = audio
     this.source = source
     this.gainNode = gainNode
+    this.monitorGain = monitorGain
     this.analyser = analyser
     this.onsetAnalyser = onsetAnalyser
     this.onsetBuffer = new Uint8Array(onsetAnalyser.frequencyBinCount)
@@ -199,6 +269,7 @@ export class AudioEngine {
 
   private load(src: string, info: LoadInfo): Promise<TrackMeta> {
     const audio = this.requireAudio()
+    this.stopMicrophone()
     this.cancelPendingLoad?.()
     audio.pause()
 
@@ -233,6 +304,127 @@ export class AudioEngine {
       audio.src = src
       audio.load()
     })
+  }
+
+  // --- Microphone --------------------------------------------------------
+
+  /**
+   * Switch the input to the microphone. Call from a user gesture. Any file or
+   * preset is unloaded; the mic feeds the same EQ, gain and analyser, and stays
+   * silent on the speakers unless `setMonitor(true)`.
+   */
+  async useMicrophone(options: MicrophoneOptions = {}): Promise<TrackMeta> {
+    this.init()
+    const ctx = this.requireCtx()
+    const request = ++this.micRequest
+    void ctx.resume().catch(() => {})
+
+    const processing = options.processing ?? false
+    let stream: MediaStream
+    try {
+      stream = await this.env.getUserMedia({
+        audio: {
+          echoCancellation: processing,
+          noiseSuppression: processing,
+          autoGainControl: processing,
+        },
+      })
+    } catch (error) {
+      throw toMicError(error)
+    }
+
+    if (request !== this.micRequest) {
+      for (const track of stream.getTracks()) track.stop()
+      throw new AudioEngineError('aborted', 'The microphone request was replaced.')
+    }
+
+    // Replacing a running mic (e.g. changing constraints) swaps streams without a gap
+    this.releaseMic()
+    this.cancelPendingLoad?.()
+    this.unloadAudioElement()
+
+    const first = this.filters.get(EQ_BANDS[0].id)
+    if (!first) throw this.notInitialized()
+    const micSource = ctx.createMediaStreamSource(stream)
+    this.micStream = stream
+    this.micSource = micSource
+    // Close the speaker gate before the mic is connected, so it never leaks out
+    this.applyMonitor(true)
+    micSource.connect(first)
+
+    for (const track of stream.getAudioTracks()) {
+      track.addEventListener('ended', this.onMicEnded)
+    }
+    globalThis.addEventListener?.('pagehide', this.onMicEnded)
+
+    this.trackCounter += 1
+    return {
+      id: `track-${this.trackCounter}`,
+      name: 'Microphone',
+      artist: 'Live input',
+      source: 'mic',
+      duration: 0,
+    }
+  }
+
+  /** Disconnect the microphone and stop its tracks so the browser's recording indicator clears. */
+  stopMicrophone(): void {
+    this.micRequest += 1
+    this.releaseMic()
+  }
+
+  get isMicActive(): boolean {
+    return this.micStream !== null
+  }
+
+  /** Play the live microphone through the speakers. Ignored for files. Off by default (feedback risk). */
+  setMonitor(monitor: boolean): void {
+    this.monitor = monitor
+    if (this.ctx) this.applyMonitor(false)
+  }
+
+  private releaseMic(): void {
+    const stream = this.micStream
+    if (!stream) return
+    for (const track of stream.getTracks()) {
+      track.removeEventListener('ended', this.onMicEnded)
+      track.stop()
+    }
+    this.micSource?.disconnect()
+    globalThis.removeEventListener?.('pagehide', this.onMicEnded)
+    this.micStream = null
+    this.micSource = null
+    this.applyMonitor(true)
+  }
+
+  /** Speaker level: files pass through (the <audio> element handles volume); the mic is gated. */
+  private applyMonitor(immediate: boolean): void {
+    const ctx = this.ctx
+    const node = this.monitorGain
+    if (!ctx || !node) return
+    const level = this.micStream ? (this.monitor && !this.muted ? this.volume : 0) : 1
+    if (immediate) {
+      node.gain.cancelScheduledValues(ctx.currentTime)
+      node.gain.setValueAtTime(level, ctx.currentTime)
+    } else {
+      this.rampParam(node.gain, level)
+    }
+  }
+
+  /** Free the loaded file so a paused track doesn't linger behind the live input. */
+  private unloadAudioElement(): void {
+    const audio = this.audio
+    if (!audio) return
+    audio.pause()
+    audio.removeAttribute('src')
+    audio.load()
+    this.revokeObjectUrl()
+  }
+
+  private onMicEnded = () => {
+    if (!this.micStream) return
+    this.stopMicrophone()
+    this.emit('micended', undefined)
   }
 
   // --- Transport ---------------------------------------------------------
@@ -291,11 +483,15 @@ export class AudioEngine {
   }
 
   setVolume(volume: number): void {
-    this.requireAudio().volume = clamp(volume, 0, 1)
+    this.volume = clamp(volume, 0, 1)
+    this.requireAudio().volume = this.volume
+    this.applyMonitor(false)
   }
 
   setMuted(muted: boolean): void {
+    this.muted = muted
     this.requireAudio().muted = muted
+    this.applyMonitor(false)
   }
 
   setGain(value: number): void {
@@ -408,6 +604,7 @@ export class AudioEngine {
   /** Stop playback, disconnect the graph, revoke URLs and close the context. */
   dispose(): void {
     this.cancelPendingLoad?.()
+    this.stopMicrophone()
     const audio = this.audio
     if (audio) {
       audio.pause()
@@ -426,6 +623,7 @@ export class AudioEngine {
     this.gainNode?.disconnect()
     this.analyser?.disconnect()
     this.onsetAnalyser?.disconnect()
+    this.monitorGain?.disconnect()
     this.revokeObjectUrl()
 
     const ctx = this.ctx
@@ -438,6 +636,7 @@ export class AudioEngine {
     this.source = null
     this.filters.clear()
     this.gainNode = null
+    this.monitorGain = null
     this.analyser = null
     this.onsetAnalyser = null
     this.onsetBuffer = new Uint8Array(0)
@@ -475,6 +674,11 @@ export class AudioEngine {
   private requireAudio(): HTMLAudioElement {
     if (!this.audio) throw this.notInitialized()
     return this.audio
+  }
+
+  private requireCtx(): AudioContext {
+    if (!this.ctx) throw this.notInitialized()
+    return this.ctx
   }
 
   private requireGain(): GainNode {
