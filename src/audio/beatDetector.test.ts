@@ -56,6 +56,16 @@ describe('BeatDetector', () => {
     expect(beats).toBe(4)
   })
 
+  it('never exceeds 3 beats per second by default', () => {
+    const detector = new BeatDetector()
+    run(detector, 0.2, 120)
+    let beats = 0
+    for (let i = 0; i < 60; i++) {
+      beats += run(detector, i % 2 ? 0.2 : 0.95, 1) // spike every other frame for 1 s
+    }
+    expect(beats).toBeLessThanOrEqual(3)
+  })
+
   it('reset clears the average and cooldown', () => {
     const detector = new BeatDetector()
     run(detector, 0.9, 200)

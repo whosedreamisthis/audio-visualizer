@@ -6,7 +6,7 @@ import { usePlaybackStore } from '@/store/playbackStore'
 import { useVisualizerStore } from '@/store/visualizerStore'
 import { getVisualizer } from '@/visualizers'
 import { getTheme } from '@/visualizers/themes'
-import type { DrawArgs, Size, Visualizer } from '@/types'
+import type { DrawArgs, Size, Visualizer, VisualizerSettings } from '@/types'
 
 /** Longest frame step passed to visualizers, so a tab switch doesn't cause a jump. */
 const MAX_DT = 0.05
@@ -32,6 +32,14 @@ export function useVisualizerLoop(
     let raf = 0
     let last = 0
     const startedAt = performance.now()
+
+    // Reduced motion: no glow, no beat flashes, and a slower idle animation
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    let reduced = motionQuery.matches
+    const onMotionChange = () => (reduced = motionQuery.matches)
+    motionQuery.addEventListener('change', onMotionChange)
+    let calmSource: VisualizerSettings | null = null
+    let calmSettings: VisualizerSettings | null = null
 
     // One args object reused every frame to avoid per-frame allocation
     const args: DrawArgs = {
@@ -70,13 +78,26 @@ export function useVisualizerLoop(
 
       sampler.sample(engine, dt)
 
+      let time = (now - startedAt) / 1000
+      let drawSettings = settings
+      if (reduced) {
+        sampler.frame.beat = false
+        sampler.frame.beatStrength = 0
+        time *= 0.4
+        if (calmSource !== settings) {
+          calmSource = settings
+          calmSettings = { ...settings, glow: false }
+        }
+        drawSettings = calmSettings ?? settings
+      }
+
       args.width = size.width
       args.height = size.height
       args.dt = dt
-      args.time = (now - startedAt) / 1000
+      args.time = time
       args.playing = usePlaybackStore.getState().status === 'playing'
       args.theme = getTheme(themeId)
-      args.settings = settings
+      args.settings = drawSettings
       active.draw(args)
 
       raf = requestAnimationFrame(frame)
@@ -99,6 +120,7 @@ export function useVisualizerLoop(
     return () => {
       stop()
       document.removeEventListener('visibilitychange', onVisibilityChange)
+      motionQuery.removeEventListener('change', onMotionChange)
       observer.disconnect()
       active?.dispose?.()
       active = null

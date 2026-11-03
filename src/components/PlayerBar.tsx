@@ -65,7 +65,11 @@ export function PlayerBar() {
     : (error ?? 'Drop a file or pick a preset')
 
   return (
-    <footer className="shrink-0 border-t bg-background px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-4">
+    <footer
+      id="player-controls"
+      tabIndex={-1}
+      aria-label="Player controls"
+      className="shrink-0 outline-none border-t bg-background px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-4">
       <div className="mx-auto grid max-w-5xl grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 md:grid-cols-[1fr_2fr_1fr]">
         <div className="flex min-w-0 items-center gap-2 md:order-1">
           <div className="min-w-0">

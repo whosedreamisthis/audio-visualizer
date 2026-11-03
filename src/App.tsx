@@ -16,6 +16,7 @@ import {
 import { AppLogo } from '@/components/AppLogo'
 import { CanvasStage } from '@/components/CanvasStage'
 import { ControlPanel } from '@/components/ControlPanel'
+import { LiveAnnouncer } from '@/components/LiveAnnouncer'
 import { OpenFileButton } from '@/components/OpenFileButton'
 import { PlayerBar } from '@/components/PlayerBar'
 import { ShortcutsDialog } from '@/components/ShortcutsDialog'
@@ -64,6 +65,13 @@ function App() {
         fullscreen && !controlsVisible && 'cursor-none',
       )}
     >
+      <a
+        href="#player-controls"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground"
+      >
+        Skip to player controls
+      </a>
+      <LiveAnnouncer />
       <header
         className={cn(
           'flex h-14 shrink-0 items-center justify-between border-b px-3 pt-[env(safe-area-inset-top)] sm:px-4',
@@ -113,7 +121,7 @@ function App() {
           <CanvasStage />
         </main>
         {isDesktop && !fullscreen && (
-          <aside className="w-80 shrink-0 border-l p-4">
+          <aside aria-label="Controls" className="w-80 shrink-0 border-l p-4">
             <ControlPanel />
           </aside>
         )}
