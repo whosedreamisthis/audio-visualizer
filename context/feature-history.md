@@ -47,3 +47,10 @@
   - Volume is shown at every width (title row on mobile). The slider needs a fixed-width wrapper in flex rows because the shadcn Slider is `w-full`.
   - `src/components/ui/slider.tsx` now forwards `aria-label` and `getAriaValueText` to the thumbs, which also labels the static panel sliders.
   - Tests: 11 new for transport (94 total).
+
+- **Canvas Render Loop:** The static mock bars are replaced by a live canvas driven by the audio analyser; all three modes currently share a basic fallback spectrum until their dedicated visualizers are built.
+  - `src/hooks/useVisualizerLoop.ts`: one `requestAnimationFrame` loop started once per canvas; reads mode, theme and settings with `getState()` each frame, reuses a single `DrawArgs` object, clamps `dt` to 0.05 s, pauses on `document.hidden`, and disposes/initializes visualizers on mode change. `src/components/VisualizerCanvas.tsx` renders once with `role="img"` and a mode-aware label; `FpsMeter.tsx` (dev only, `?fps`) updates the DOM directly.
+  - `src/lib/canvas.ts` (`computeBackingSize`, `fitCanvasToDisplay`, DPR capped at 2), `src/audio/frameSampler.ts` (reused buffers, band energy and beat per frame, sample rate on the frame), `src/audio/beatDetector.ts` (exponential rolling bass average, threshold, floor and cooldown), `writeBandEnergy` in `bands.ts` (no allocation).
+  - `src/visualizers/`: `themes.ts` (five theme palettes), `index.ts` registry, `fallback.ts` (basic bars with an ambient idle wave) and `spectrum.ts`: log-spaced bar edges (40 Hz to 12 kHz), `averageBins`, level compression, treble tilt, and adaptive per-bar scaling (decaying peak, strength 0.6) so quiet treble stays visible; shared with the upcoming bars visualizer.
+  - Types: `AudioFrame` gains `sampleRate` and uses `ByteBuffer`; `DrawArgs` gains `time` and `playing`.
+  - Tests: 39 new (133 total) for the beat detector, frame sampler, canvas sizing and spectrum helpers. Visual quality was tuned by eye over several iterations (right side was flat until log spacing, compression and adaptive scaling were added).
