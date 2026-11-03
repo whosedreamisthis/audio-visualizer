@@ -1,4 +1,5 @@
 import type { Visualizer, VisualizerMode } from '@/types'
+import { createBarsVisualizer } from './bars'
 import { createFallbackVisualizer } from './fallback'
 import { createWaveformVisualizer } from './waveform'
 
@@ -8,7 +9,7 @@ import { createWaveformVisualizer } from './waveform'
  */
 const registry: Record<VisualizerMode, Visualizer> = {
   waveform: createWaveformVisualizer(),
-  bars: createFallbackVisualizer('bars', 'Bars'),
+  bars: createBarsVisualizer(),
   particles: createFallbackVisualizer('particles', 'Particles'),
 }
 
