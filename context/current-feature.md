@@ -1,18 +1,30 @@
 # Current Feature
 
-<!-- Feature name and short description -->
+Player Controls (see `context/features/player-controls.md`): the bottom player bar wired to the playback and audio stores and the engine.
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- [ ] `src/audio/transport.ts`: `togglePlayback` and `seekTo` using the engine and playback store
+- [ ] Play/pause button reflecting `status`, disabled with no track or while loading
+- [ ] `SeekBar` (Slider): progress from the store, seeks on commit, local value while dragging
+- [ ] `TimeDisplay`: `formatTime` for current and duration; only it and the seek bar read `currentTime`
+- [ ] Volume slider and mute button (mute keeps the previous volume)
+- [ ] Loop toggle and restart button; speed readout from the audio store
+- [ ] Track title, artist and source badge
+- [ ] Icon-only buttons have `aria-label` and tooltips; sliders have `aria-valuetext` ("1:05 of 3:18", "Volume 70%")
+- [ ] Controls disabled gracefully with no track; track end returns to 0:00 paused (loop keeps playing)
+- [ ] Vitest tests for transport logic
+- [ ] `npm test`, `npm run lint` and `npm run build` pass
 
 ## Notes
 
-<!-- Any extra notes -->
+- Previous/next are removed: there is no playlist, so they would be dead buttons. Restart replaces them.
+- The shadcn Slider wrapper now forwards `aria-label` and `getAriaValueText` to the thumbs.
+- Time updates come from the throttled store writes (about 10 Hz); no per-frame work.
 
 ## Completed Features
 

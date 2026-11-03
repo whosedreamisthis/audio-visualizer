@@ -1,22 +1,22 @@
-import {
-  Gauge,
-  Pause,
-  Repeat,
-  SkipBack,
-  SkipForward,
-  Volume2,
-} from 'lucide-react'
+import { Gauge, Pause, Play, Repeat, RotateCcw } from 'lucide-react'
+import { seekTo, getTransportAction, togglePlayback } from '@/audio/transport'
+import { SeekBar } from '@/components/SeekBar'
+import { VolumeControl } from '@/components/VolumeControl'
 import { Button } from '@/components/ui/button'
-import { Slider } from '@/components/ui/slider'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { formatSpeed } from '@/lib/format'
+import { cn } from '@/lib/utils'
+import { useAudioStore } from '@/store/audioStore'
+import { usePlaybackStore } from '@/store/playbackStore'
 
 function IconButton({
   label,
   children,
+  className,
   ...props
 }: { label: string } & React.ComponentProps<typeof Button>) {
   return (
@@ -27,7 +27,7 @@ function IconButton({
             variant="ghost"
             size="icon"
             aria-label={label}
-            className="size-11"
+            className={cn('size-11', className)}
             {...props}
           />
         }
@@ -39,54 +39,89 @@ function IconButton({
   )
 }
 
+const SOURCE_LABEL = { file: 'File', preset: 'Preset', mic: 'Mic' } as const
+
 export function PlayerBar() {
+  const status = usePlaybackStore((s) => s.status)
+  const track = usePlaybackStore((s) => s.track)
+  const loop = usePlaybackStore((s) => s.loop)
+  const error = usePlaybackStore((s) => s.error)
+  const toggleLoop = usePlaybackStore((s) => s.toggleLoop)
+  const speed = useAudioStore((s) => s.speed)
+
+  const action = getTransportAction(status, track !== null)
+  const playing = action === 'pause'
+  const canTransport = track !== null && status !== 'loading'
+
+  const title = track
+    ? track.name
+    : status === 'loading'
+      ? 'Loading…'
+      : 'No track loaded'
+  const subtitle = track
+    ? (track.artist ?? 'Unknown artist')
+    : (error ?? 'Drop a file or pick a preset')
+
   return (
     <footer className="shrink-0 border-t bg-background px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-4">
       <div className="mx-auto grid max-w-5xl grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 md:grid-cols-[1fr_2fr_1fr]">
-        <div className="min-w-0 max-md:col-span-2 md:order-1">
-          <div className="truncate text-sm font-medium">No track loaded</div>
-          <div className="truncate text-xs text-muted-foreground">
-            Drop a file or pick a preset
+        <div className="flex min-w-0 items-center gap-2 md:order-1">
+          <div className="min-w-0">
+            <div className="truncate text-sm font-medium">{title}</div>
+            <div
+              className={cn(
+                'truncate text-xs text-muted-foreground',
+                !track && error && 'text-destructive',
+              )}
+            >
+              {subtitle}
+            </div>
           </div>
+          {track && (
+            <span className="shrink-0 rounded-full border px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">
+              {SOURCE_LABEL[track.source]}
+            </span>
+          )}
+        </div>
+
+        <div className="md:hidden">
+          <VolumeControl />
         </div>
 
         <div className="max-md:col-span-2 md:order-2">
           <div className="flex items-center justify-center gap-1">
-            <IconButton label="Previous">
-              <SkipBack />
+            <IconButton
+              label="Restart"
+              disabled={!canTransport}
+              onClick={() => seekTo(0)}
+            >
+              <RotateCcw />
             </IconButton>
-            <Button size="icon" className="size-11 rounded-full" aria-label="Play / pause">
-              <Pause />
+            <Button
+              size="icon"
+              className="size-11 rounded-full"
+              aria-label={playing ? 'Pause' : 'Play'}
+              disabled={!canTransport}
+              onClick={() => void togglePlayback()}
+            >
+              {playing ? <Pause /> : <Play />}
             </Button>
-            <IconButton label="Next">
-              <SkipForward />
-            </IconButton>
-            <IconButton label="Loop">
+            <IconButton
+              label={loop ? 'Loop on' : 'Loop off'}
+              aria-pressed={loop}
+              variant={loop ? 'secondary' : 'ghost'}
+              onClick={toggleLoop}
+            >
               <Repeat />
             </IconButton>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">
-              0:00
-            </span>
-            <Slider aria-label="Seek" defaultValue={[0]} min={0} max={100} />
-            <span className="w-10 text-xs tabular-nums text-muted-foreground">
-              3:18
-            </span>
-          </div>
+          <SeekBar />
         </div>
 
         <div className="hidden items-center justify-end gap-2 md:order-3 md:flex">
-          <Volume2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-          <Slider
-            aria-label="Volume"
-            defaultValue={[70]}
-            min={0}
-            max={100}
-            className="max-w-28"
-          />
+          <VolumeControl />
           <span className="flex shrink-0 items-center gap-1 text-xs tabular-nums text-muted-foreground">
-            <Gauge className="size-4" aria-hidden /> 1.0x
+            <Gauge className="size-4" aria-hidden /> {formatSpeed(speed)}
           </span>
         </div>
       </div>
