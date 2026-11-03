@@ -1,29 +1,18 @@
-# Current Feature: Performance Pass
+# Current Feature
 
-Profile and tune the render loop and React tree so the app holds a steady 60 fps.
+<!-- Feature name and short description -->
 
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
-- Dev FPS/frame-time meter (toggle with a key or `?fps` query param)
-- Verify with React DevTools Profiler that nothing re-renders per frame while audio plays
-- Audit store selectors; add `useShallow` where multi-field picks exist; memoize panels with `React.memo`
-- Chrome Performance profile at 1080p, FFT 2048: no long frames, no GC spikes (allocation timeline flat)
-- Adaptive quality: if average frame time exceeds about 20 ms for 2 s, reduce particle count / disable glow and show a small notice (with a "high quality" override)
-- Lazy-load below-the-fold UI (settings panel, shortcut dialog) with `React.lazy`
-- Bundle check: `vite build` size report; avoid pulling in unused icon sets or libraries
-- Ensure the loop is paused when the tab is hidden and when the canvas is off-screen
-- Throttled store writes confirmed (time updates ≤ 10 Hz)
+<!-- Goals and requirements -->
 
 ## Notes
 
-- Record before/after numbers in the PR/commit message
-- Target: 60 fps at 1080p with default settings on a mid-range laptop; JS bundle under about 250 kB gzipped
-- Acceptance: Profiler shows zero React commits per frame during playback
-- Acceptance: Heap snapshot is stable after 5 minutes of playback
+<!-- Any extra notes -->
 
 ## Completed Features
 
@@ -49,3 +38,4 @@ In Progress
 - **Microphone Input:** Live microphone as a source with a speaker-monitor gate, permission help and live-aware controls; key files `src/audio/AudioEngine.ts`, `mic.ts`, `src/store/micStore.ts`, `src/components/MicInput.tsx`.
 - **Saved Presets:** Named snapshots of EQ, gain, speed, theme, mode and visualizer settings with rename, undo delete, JSON import/export and reset all; key files `src/store/savedPresetsStore.ts`, `src/components/SavedPresets.tsx`, `src/lib/resetSettings.ts`.
 - **Accessibility:** Polite live announcer, skip link, reduced-motion and contrast handling, slider value text and a 3-per-second beat flash cap; key files `src/components/LiveAnnouncer.tsx`, `src/lib/announce.ts`, `src/hooks/useVisualizerLoop.ts`.
+- **Performance Pass:** FPS meter on P or `?fps`, adaptive quality with a High quality override, off-screen loop pause, lazy Visual panel and shortcuts dialog; key files `src/lib/frameBudget.ts`, `src/hooks/useVisualizerLoop.ts`, `src/components/QualityNotice.tsx`.

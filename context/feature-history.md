@@ -139,3 +139,13 @@
   - `index.css` adds a `prefers-contrast: more` block (stronger muted text, borders, input and ring). Visual tab sliders gained `getAriaValueText`.
   - Already present and left unchanged: canvas `role="img"` label, icon button labels, seek/volume/EQ/mixer value text, check/ring on active mode and theme.
   - Tests: `announce.test.ts` and a beat-rate test; 268 pass. Lighthouse, a keyboard-only walkthrough, a screen reader pass and per-theme contrast under high contrast were not verified.
+
+- **Performance Pass:** The render loop and React tree were tuned so the app holds a steady frame rate, with automatic fallback on slow devices.
+  - `src/lib/frameBudget.ts`: `FrameBudgetMonitor` sums frame times over a 2 s window and reports once when the average exceeds 20 ms (allocation-free); `reduceQuality` turns glow off and keeps 40% of the particle count (never below the minimum).
+  - `useVisualizerLoop`: feeds each frame into the monitor and, once tripped, draws with the reduced settings (cached per settings object). The loop now also stops while the canvas is off-screen (`IntersectionObserver`) as well as while the tab is hidden, and the monitor resets on resume.
+  - `uiStore`: non-persisted `fpsVisible` (initial value from `?fps`), `qualityReduced` and `highQualityOverride`. `QualityNotice` shows a status message with a "High quality" button that turns the reduction off for the session.
+  - FPS meter: `P` toggles it (shortcut and help entry added) and it now works in production builds, not only in development.
+  - Lazy loading: `VisualPanel` via `React.lazy` with a Suspense fallback in `ControlPanel`; `LazyShortcutsDialog` loads the dialog on first open and keeps it mounted afterwards. The four control panels are wrapped in `React.memo`.
+  - Audited and left unchanged: all store selectors were already single-field (no `useShallow` needed) and playback time writes were already throttled to 10 Hz.
+  - Bundle: main JS 573.8 kB (185.2 kB gzip) to 480.9 kB (153.5 kB gzip).
+  - Tests: `frameBudget.test.ts`, `uiStore.test.ts` and a `P` shortcut case; 279 pass. The Profiler commit check, Chrome 1080p profile, 5-minute heap snapshot and before/after fps were not measured; the loop, notice and lazy wrappers were not checked in a browser.
