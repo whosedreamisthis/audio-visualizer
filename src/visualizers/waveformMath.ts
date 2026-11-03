@@ -14,7 +14,8 @@ export function byteToUnit(byte: number): number {
 }
 
 /**
- * Fill `out` with y positions by sampling `wave` at evenly spaced indices.
+ * Fill `out` with y positions by sampling `wave` at evenly spaced positions,
+ * linearly interpolating between neighbouring samples so upsampled data has no steps.
  * Silence (or no data) maps to `mid`; full scale reaches `mid ± amp`.
  */
 export function fillWaveformPoints(
@@ -31,8 +32,26 @@ export function fillWaveformPoints(
       out[i] = mid
       continue
     }
-    const index = Math.min(length - 1, Math.floor((i * length) / count))
-    out[i] = mid + byteToUnit(wave[index]) * amp
+    const pos = count > 1 ? (i * (length - 1)) / (count - 1) : 0
+    const lo = Math.floor(pos)
+    const hi = Math.min(length - 1, lo + 1)
+    const frac = pos - lo
+    const unit = byteToUnit(wave[lo]) * (1 - frac) + byteToUnit(wave[hi]) * frac
+    out[i] = mid + unit * amp
+  }
+}
+
+/** Soften corners with repeated [1 2 1] / 4 passes, keeping the end points fixed. */
+export function smoothPoints(ys: Float32Array, passes: number): void {
+  const n = ys.length
+  if (n < 3) return
+  for (let p = 0; p < passes; p++) {
+    let prev = ys[0]
+    for (let i = 1; i < n - 1; i++) {
+      const cur = ys[i]
+      ys[i] = (prev + 2 * cur + ys[i + 1]) / 4
+      prev = cur
+    }
   }
 }
 

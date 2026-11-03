@@ -69,6 +69,9 @@ const browserEnv: EngineEnv = {
   revokeObjectURL: (url) => URL.revokeObjectURL(url),
 }
 
+/** Small FFT: fast to compute and still resolves bass bins (~43 Hz each at 44.1 kHz). */
+const ONSET_FFT_SIZE = 1024
+
 export interface LoadInfo {
   name: string
   artist?: string
@@ -88,6 +91,9 @@ export class AudioEngine {
   private filters = new Map<EqBandId, BiquadFilterNode>()
   private gainNode: GainNode | null = null
   private analyser: AnalyserNode | null = null
+  /** Unsmoothed analyser used only for beat onsets, so beats aren't delayed by display smoothing. */
+  private onsetAnalyser: AnalyserNode | null = null
+  private onsetBuffer: ByteBuffer = new Uint8Array(0)
   private objectUrl: string | null = null
   private trackCounter = 0
   /** Detaches the listeners of the load in flight and rejects it; null when idle. */
@@ -139,8 +145,13 @@ export class AudioEngine {
     analyser.fftSize = DEFAULT_FFT_SIZE
     analyser.smoothingTimeConstant = SMOOTHING.default
 
+    const onsetAnalyser = ctx.createAnalyser()
+    onsetAnalyser.fftSize = ONSET_FFT_SIZE
+    onsetAnalyser.smoothingTimeConstant = 0
+
     previous.connect(gainNode)
     gainNode.connect(analyser)
+    gainNode.connect(onsetAnalyser)
     analyser.connect(ctx.destination)
 
     audio.addEventListener('timeupdate', this.onTimeUpdate)
@@ -155,6 +166,8 @@ export class AudioEngine {
     this.source = source
     this.gainNode = gainNode
     this.analyser = analyser
+    this.onsetAnalyser = onsetAnalyser
+    this.onsetBuffer = new Uint8Array(onsetAnalyser.frequencyBinCount)
     this.freqBuffer = new Uint8Array(analyser.frequencyBinCount)
     this.emit('initialized', undefined)
   }
@@ -173,9 +186,14 @@ export class AudioEngine {
     return this.load(url, { name: file.name.replace(/\.[^.]+$/, ''), source: 'file' })
   }
 
-  loadUrl(url: string, info: LoadInfo): Promise<TrackMeta> {
+  /**
+   * Load a URL. Pass `ownsUrl` for a blob URL the caller created so the engine
+   * revokes it when the next track replaces it or the engine is disposed.
+   */
+  loadUrl(url: string, info: LoadInfo, ownsUrl = false): Promise<TrackMeta> {
     this.init()
     this.revokeObjectUrl()
+    if (ownsUrl) this.objectUrl = url
     return this.load(url, { source: 'preset', ...info })
   }
 
@@ -338,6 +356,14 @@ export class AudioEngine {
     this.analyser?.getByteTimeDomainData(out)
   }
 
+  /** Bass energy (0..1) from an unsmoothed analyser; reacts to a kick within one frame. */
+  getOnsetBass(): number {
+    const analyser = this.onsetAnalyser
+    if (!analyser) return 0
+    analyser.getByteFrequencyData(this.onsetBuffer)
+    return getBandEnergy(this.onsetBuffer, this.sampleRate, analyser.fftSize).bass
+  }
+
   /** Sample the analyser and return bass/mid/treble/overall energy (0..1). */
   getBands(): BandEnergy {
     if (!this.analyser) return { bass: 0, mid: 0, treble: 0, level: 0 }
@@ -399,6 +425,7 @@ export class AudioEngine {
     for (const filter of this.filters.values()) filter.disconnect()
     this.gainNode?.disconnect()
     this.analyser?.disconnect()
+    this.onsetAnalyser?.disconnect()
     this.revokeObjectUrl()
 
     const ctx = this.ctx
@@ -412,6 +439,8 @@ export class AudioEngine {
     this.filters.clear()
     this.gainNode = null
     this.analyser = null
+    this.onsetAnalyser = null
+    this.onsetBuffer = new Uint8Array(0)
     this.freqBuffer = new Uint8Array(0)
   }
 

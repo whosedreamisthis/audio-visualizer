@@ -3,6 +3,7 @@ import type { DrawArgs, Theme, Visualizer } from '@/types'
 import {
   fillWaveformPoints,
   peakAmplitude,
+  smoothPoints,
   trackWavePeak,
   waveformGain,
   waveformPointCount,
@@ -13,6 +14,8 @@ const AMPLITUDE = 0.32
 /** Trail fade per frame: low while playing (long trail), higher when idle (quick settle). */
 const TRAIL_PLAYING = 0.2
 const TRAIL_IDLE_EXTRA = 0.4
+/** [1 2 1] smoothing passes over the plotted points; more passes give rounder curves. */
+const SMOOTH_PASSES = 6
 /** Distance kept free at the top and bottom edges, in px. */
 const EDGE_PAD = 4
 
@@ -110,6 +113,8 @@ export function createWaveformVisualizer(): Visualizer {
       wavePeak = trackWavePeak(wavePeak, playing ? peakAmplitude(audio.wave) : 0, dt)
       const gain = playing ? waveformGain(wavePeak) : 1
       fillWaveformPoints(ys, audio.wave, mid, height * AMPLITUDE * settings.sensitivity * gain)
+      // Round off corners from squarish or low-resolution audio data
+      smoothPoints(ys, SMOOTH_PASSES)
 
       // Idle breathing fades out as playback starts; also keep the line inside the canvas
       const idleAmp = height * 0.08 * (1 - activity)

@@ -11,7 +11,8 @@ type SamplerEngine = Pick<
   | 'fftSize'
   | 'getFrequencyData'
   | 'getTimeDomainData'
->
+> &
+  Partial<Pick<AudioEngine, 'getOnsetBass'>>
 
 /**
  * Fills one reused `AudioFrame` per animation frame: analyser data, band energy and beat.
@@ -42,7 +43,7 @@ export class FrameSampler {
     frame.sampleRate = engine.sampleRate
     writeBandEnergy(frame.bands, frame.freq, engine.sampleRate, engine.fftSize)
 
-    const beat = this.beatDetector.update(frame.bands.bass, dt)
+    const beat = this.beatDetector.update(engine.getOnsetBass?.() ?? frame.bands.bass, dt)
     frame.beat = beat.beat
     frame.beatStrength = beat.strength
 

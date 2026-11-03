@@ -1,0 +1,42 @@
+[
+  {
+    "id": "pulse-drive",
+    "title": "Pulse Drive",
+    "artist": "Audio Visualizer Studio",
+    "url": "presets/pulse-drive.mp3",
+    "license": "CC0",
+    "sourceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "bpm": 128,
+    "suggestedTheme": "neon"
+  },
+  {
+    "id": "night-bloom",
+    "title": "Night Bloom",
+    "artist": "Audio Visualizer Studio",
+    "url": "presets/night-bloom.mp3",
+    "license": "CC0",
+    "sourceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "bpm": 66,
+    "suggestedTheme": "aurora"
+  },
+  {
+    "id": "glass-tide",
+    "title": "Glass Tide",
+    "artist": "Audio Visualizer Studio",
+    "url": "presets/glass-tide.mp3",
+    "license": "CC0",
+    "sourceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "bpm": 84,
+    "suggestedTheme": "ocean"
+  },
+  {
+    "id": "solar-run",
+    "title": "Solar Run",
+    "artist": "Audio Visualizer Studio",
+    "url": "presets/solar-run.mp3",
+    "license": "CC0",
+    "sourceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "bpm": 152,
+    "suggestedTheme": "sunset"
+  }
+]
