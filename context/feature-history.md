@@ -40,3 +40,10 @@
   - `src/audio/loadAudioFile.ts`: `loadAudioFile` validates, sets status `loading`, calls `engine.init()` inside the gesture, loads, sets the track and plays; blocked autoplay shows an info toast, other failures clear the track, set the error and toast. A load token ignores stale loads when a newer file arrives. `handleAudioFiles` picks the first valid file and toasts when others are ignored.
   - `src/components/CanvasStage.tsx`: hidden multi-file input behind the Choose file button, loading spinner state, "Release to play" overlay, card hidden once a track is loaded.
   - Tests: 9 new for `validateAudioFile` (83 total). Playback controls and the real visualizer are not wired yet; the preset button stays inert until the preset library.
+
+- **Player Controls:** The player bar now controls playback instead of showing placeholders.
+  - `src/audio/transport.ts`: `getTransportAction` (none without a track, pause while playing, play when ready/paused, none while loading or errored), `togglePlayback` (error toast on failure) and `seekTo` (engine seek plus immediate store time); both accept an injected engine for tests.
+  - `src/components/PlayerBar.tsx`: play/pause tied to status, restart, loop toggle (`aria-pressed`), track title, artist and File/Preset/Mic badge, speed readout; previous/next removed (no playlist). `SeekBar.tsx` (local drag value, seeks on commit, `aria-valuetext` "1:05 of 3:18"), `TimeDisplay.tsx` (the only readers of `currentTime` besides the seek bar), `VolumeControl.tsx` (mute keeps the volume; dragging while muted unmutes).
+  - Volume is shown at every width (title row on mobile). The slider needs a fixed-width wrapper in flex rows because the shadcn Slider is `w-full`.
+  - `src/components/ui/slider.tsx` now forwards `aria-label` and `getAriaValueText` to the thumbs, which also labels the static panel sliders.
+  - Tests: 11 new for transport (94 total).
