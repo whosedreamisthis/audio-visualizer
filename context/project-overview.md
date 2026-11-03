@@ -32,13 +32,13 @@ Most music visualizers are either desktop apps, locked inside a player, or too s
 
 **What this project is meant to demonstrate (technical signals):**
 
-| Signal | How it is shown |
-| --- | --- |
-| **Web Audio API** | `AudioContext`, `MediaElementAudioSourceNode`, `GainNode`, `BiquadFilterNode` chain, `AnalyserNode` reading frequency/time-domain data every frame |
-| **Canvas performance** | `requestAnimationFrame` loop that lives *outside* React's render cycle; zero component re-renders per frame |
-| **Complex client state** | Zustand store slices for playback, audio params, visualizer settings; selector-based subscriptions; transient (non-reactive) reads inside the loop |
-| **Server state done right** | TanStack Query for the preset track library and decoded remote audio, with caching, loading and error states |
-| **TypeScript rigor** | Strict types for audio graph, visualizer plugin interface, and store slices |
+| Signal                      | How it is shown                                                                                                                                    |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Web Audio API**           | `AudioContext`, `MediaElementAudioSourceNode`, `GainNode`, `BiquadFilterNode` chain, `AnalyserNode` reading frequency/time-domain data every frame |
+| **Canvas performance**      | `requestAnimationFrame` loop that lives _outside_ React's render cycle; zero component re-renders per frame                                        |
+| **Complex client state**    | Zustand store slices for playback, audio params, visualizer settings; selector-based subscriptions; transient (non-reactive) reads inside the loop |
+| **Server state done right** | TanStack Query for the preset track library and decoded remote audio, with caching, loading and error states                                       |
+| **TypeScript rigor**        | Strict types for audio graph, visualizer plugin interface, and store slices                                                                        |
 
 ---
 
@@ -92,20 +92,20 @@ Most music visualizers are either desktop apps, locked inside a player, or too s
 
 ## 4. Tech Stack
 
-| Layer | Choice | Notes |
-| --- | --- | --- |
-| App type | **Client-side single page application** | No SSR, no server components, no API routes, no backend or database; everything runs in the browser and deploys as static files |
-| Build tool | **Vite** | React + TS template; env vars use the `VITE_` prefix and are public |
-| UI | **React 19** + **TypeScript** (strict) | Function components and hooks only |
-| Styling | **Tailwind CSS v4** (`@tailwindcss/vite`) | Dark-first, CSS variables for theme accents |
-| Client state | **Zustand** | Slices + `persist` + `subscribeWithSelector` |
-| Server state | **TanStack Query v5** | Preset manifest and remote audio fetching |
-| Graphics | **Canvas 2D API** | `requestAnimationFrame` loop |
-| Audio | **Web Audio API** | Native, no audio libraries |
-| Icons | `lucide-react` | |
+| Layer         | Choice                                      | Notes                                                                                                                                         |
+| ------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| App type      | **Client-side single page application**     | No SSR, no server components, no API routes, no backend or database; everything runs in the browser and deploys as static files               |
+| Build tool    | **Vite**                                    | React + TS template; env vars use the `VITE_` prefix and are public                                                                           |
+| UI            | **React 19** + **TypeScript** (strict)      | Function components and hooks only                                                                                                            |
+| Styling       | **Tailwind CSS v4** (`@tailwindcss/vite`)   | Dark-first, CSS variables for theme accents                                                                                                   |
+| Client state  | **Zustand**                                 | Slices + `persist` + `subscribeWithSelector`                                                                                                  |
+| Server state  | **TanStack Query v5**                       | Preset manifest and remote audio fetching                                                                                                     |
+| Graphics      | **Canvas 2D API**                           | `requestAnimationFrame` loop                                                                                                                  |
+| Audio         | **Web Audio API**                           | Native, no audio libraries                                                                                                                    |
+| Icons         | `lucide-react`                              |                                                                                                                                               |
 | UI components | **shadcn/ui** (Radix primitives + Tailwind) | Slider, Tabs, Button, Tooltip, Toggle, Select, Switch, Sheet, Sonner toasts, Card, Separator; components are copied into `src/components/ui/` |
-| Lint / format | ESLint + Prettier | Already scaffolded ESLint |
-| Testing | Vitest (node environment) | Pure logic only (EQ math, beat detection, stores); no component tests |
+| Lint / format | ESLint + Prettier                           | Already scaffolded ESLint                                                                                                                     |
+| Testing       | Vitest (node environment)                   | Pure logic only (EQ math, beat detection, stores); no component tests                                                                         |
 
 > **Note:** check current docs (Context7) for Tailwind v4, TanStack Query v5 and Zustand v5 APIs before implementing; they have changed significantly between majors.
 
@@ -183,21 +183,21 @@ HTMLAudioElement (or MediaStream for mic)
 
 ```ts
 class AudioEngine {
-  init(): void                                  // create context + graph lazily
-  loadFile(file: File): Promise<TrackMeta>      // object URL → <audio>.src
-  loadUrl(url: string): Promise<TrackMeta>
-  play(): Promise<void>
-  pause(): void
-  seek(seconds: number): void
-  setGain(value: number): void                  // 0..2
-  setEqBand(band: EqBandId, db: number): void   // -12..12
-  setPlaybackRate(rate: number): void           // 0.5..2
-  setFftSize(size: FftSize): void
-  setSmoothing(value: number): void
-  getFrequencyData(out: Uint8Array): void       // fills a reused buffer
-  getTimeDomainData(out: Uint8Array): void
-  getBands(): BandEnergy                        // { bass, mid, treble, level }
-  dispose(): void                               // revoke URLs, disconnect, close ctx
+  init(): void; // create context + graph lazily
+  loadFile(file: File): Promise<TrackMeta>; // object URL → <audio>.src
+  loadUrl(url: string): Promise<TrackMeta>;
+  play(): Promise<void>;
+  pause(): void;
+  seek(seconds: number): void;
+  setGain(value: number): void; // 0..2
+  setEqBand(band: EqBandId, db: number): void; // -12..12
+  setPlaybackRate(rate: number): void; // 0.5..2
+  setFftSize(size: FftSize): void;
+  setSmoothing(value: number): void;
+  getFrequencyData(out: Uint8Array): void; // fills a reused buffer
+  getTimeDomainData(out: Uint8Array): void;
+  getBands(): BandEnergy; // { bass, mid, treble, level }
+  dispose(): void; // revoke URLs, disconnect, close ctx
 }
 ```
 
@@ -233,13 +233,24 @@ function useVisualizerLoop(canvasRef: RefObject<HTMLCanvasElement | null>) {
       const dt = Math.min((now - last) / 1000, 0.05); // clamp after tab-switch
       last = now;
       const { mode, theme, settings } = useVisualizerStore.getState(); // transient read
-      engine.sample();                                                  // fill buffers
-      visualizers[mode].draw({ ctx, width, height, dt, theme, settings, audio: engine.frame });
+      engine.sample(); // fill buffers
+      visualizers[mode].draw({
+        ctx,
+        width,
+        height,
+        dt,
+        theme,
+        settings,
+        audio: engine.frame,
+      });
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
 
-    return () => { cancelAnimationFrame(raf); resize.disconnect(); };
+    return () => {
+      cancelAnimationFrame(raf);
+      resize.disconnect();
+    };
   }, [canvasRef]);
 }
 ```
@@ -252,7 +263,7 @@ Key points: the loop starts **once**; settings are read with `getState()` each f
 interface Visualizer {
   id: VisualizerMode;
   label: string;
-  init?(size: Size): void;                    // allocate pools, e.g. particles
+  init?(size: Size): void; // allocate pools, e.g. particles
   resize?(size: Size): void;
   draw(args: DrawArgs): void;
   dispose?(): void;
@@ -263,11 +274,11 @@ New visualizers register in `src/visualizers/index.ts`. Nothing else needs to ch
 
 ### 7.3 Built-in visualizers
 
-| Visualizer | Data | Technique |
-| --- | --- | --- |
-| **Waveform** | Time-domain | Path through samples, mirrored ghost trail via low-alpha fade fill, glow via `shadowBlur` (toggleable; it is expensive) |
-| **Frequency Bars** | Frequency (log-scaled bins) | Bars grouped into N bands, eased with lerp, peak caps that fall with gravity, theme gradient built once and cached |
-| **Particle Spectrum** | Bands + beat | Fixed-size particle pool (no per-frame allocation); bass spawns radial bursts, treble drives sparkle, mids drive hue shift |
+| Visualizer            | Data                        | Technique                                                                                                                  |
+| --------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Waveform**          | Time-domain                 | Path through samples, mirrored ghost trail via low-alpha fade fill, glow via `shadowBlur` (toggleable; it is expensive)    |
+| **Frequency Bars**    | Frequency (log-scaled bins) | Bars grouped into N bands, eased with lerp, peak caps that fall with gravity, theme gradient built once and cached         |
+| **Particle Spectrum** | Bands + beat                | Fixed-size particle pool (no per-frame allocation); bass spawns radial bursts, treble drives sparkle, mids drive hue shift |
 
 ### 7.4 Beat detection
 
@@ -284,8 +295,8 @@ Stores live in `src/store/`. Each store uses a typed slice, selectors, and the `
 ```ts
 interface PlaybackState {
   status: "idle" | "loading" | "ready" | "playing" | "paused" | "error";
-  track: TrackMeta | null;          // name, source ("file" | "preset" | "mic"), duration
-  currentTime: number;              // throttled updates only
+  track: TrackMeta | null; // name, source ("file" | "preset" | "mic"), duration
+  currentTime: number; // throttled updates only
   duration: number;
   loop: boolean;
   error: string | null;
@@ -301,12 +312,12 @@ interface PlaybackState {
 
 ```ts
 interface AudioState {
-  volume: number;        // 0..1 UI volume
+  volume: number; // 0..1 UI volume
   muted: boolean;
-  gain: number;          // 0..2 master gain
-  speed: number;         // 0.5..2
+  gain: number; // 0..2 master gain
+  speed: number; // 0.5..2
   preservePitch: boolean;
-  eq: Record<EqBandId, number>;   // dB per band
+  eq: Record<EqBandId, number>; // dB per band
   setGain(v: number): void;
   setSpeed(v: number): void;
   setEqBand(id: EqBandId, db: number): void;
@@ -325,8 +336,8 @@ interface VisualizerState {
   themeId: ThemeId;
   settings: {
     fftSize: 512 | 1024 | 2048 | 4096;
-    smoothing: number;      // 0..0.99
-    sensitivity: number;    // 0.5..3
+    smoothing: number; // 0..0.99
+    sensitivity: number; // 0.5..3
     barCount: number;
     particleCount: number;
     glow: boolean;
@@ -355,12 +366,12 @@ interface VisualizerState {
 
 TanStack Query is used **only where there is truly remote or async data**. It is not used for UI or playback state.
 
-| Query / Mutation | Purpose | Config |
-| --- | --- | --- |
-| `usePresetTracks()` | Fetch the preset manifest `/presets/manifest.json` (id, title, artist, url, license, bpm, suggested theme) | `staleTime: Infinity`, `gcTime: 1h`, typed with a Zod schema (optional) |
-| `usePresetAudio(trackId)` | Fetch and validate the preset audio (blob) before handing the object URL to the engine; shows progress and handles failure | `enabled` only after the user selects a preset; `retry: 2`; the object URL is revoked on cleanup |
-| `useLoadPreset()` (mutation) | Orchestrates "select preset → fetch → `engine.loadUrl` → autoplay" with loading and error states | `onError` surfaces a toast and sets playback `error` |
-| *(stretch)* `useSharedPreset(id)` | Fetch a shared settings preset from a URL or gist | |
+| Query / Mutation                  | Purpose                                                                                                                    | Config                                                                                           |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `usePresetTracks()`               | Fetch the preset manifest `/presets/manifest.json` (id, title, artist, url, license, bpm, suggested theme)                 | `staleTime: Infinity`, `gcTime: 1h`, typed with a Zod schema (optional)                          |
+| `usePresetAudio(trackId)`         | Fetch and validate the preset audio (blob) before handing the object URL to the engine; shows progress and handles failure | `enabled` only after the user selects a preset; `retry: 2`; the object URL is revoked on cleanup |
+| `useLoadPreset()` (mutation)      | Orchestrates "select preset → fetch → `engine.loadUrl` → autoplay" with loading and error states                           | `onError` surfaces a toast and sets playback `error`                                             |
+| _(stretch)_ `useSharedPreset(id)` | Fetch a shared settings preset from a URL or gist                                                                          |                                                                                                  |
 
 Setup in `main.tsx`:
 
@@ -372,7 +383,7 @@ const queryClient = new QueryClient({
 <QueryClientProvider client={queryClient}>
   <App />
   {import.meta.env.DEV && <ReactQueryDevtools buttonPosition="bottom-left" />}
-</QueryClientProvider>
+</QueryClientProvider>;
 ```
 
 Query keys are centralized in `src/api/queryKeys.ts` (`presetKeys.all`, `presetKeys.audio(id)`).
@@ -386,7 +397,7 @@ Central types in `src/types/`:
 ```ts
 type VisualizerMode = "waveform" | "bars" | "particles";
 type ThemeId = "neon" | "sunset" | "ocean" | "mono" | "aurora";
-type EqBandId = "low" | "mid" | "high";   // widens to 10 bands later
+type EqBandId = "low" | "mid" | "high"; // widens to 10 bands later
 type FftSize = 512 | 1024 | 2048 | 4096;
 
 interface TrackMeta {
@@ -407,7 +418,12 @@ interface PresetTrack {
   suggestedTheme?: ThemeId;
 }
 
-interface BandEnergy { bass: number; mid: number; treble: number; level: number } // 0..1
+interface BandEnergy {
+  bass: number;
+  mid: number;
+  treble: number;
+  level: number;
+} // 0..1
 
 interface AudioFrame {
   freq: Uint8Array;
@@ -421,13 +437,13 @@ interface Theme {
   id: ThemeId;
   label: string;
   background: string;
-  colors: string[];       // gradient stops
-  accent: string;         // also mapped to a CSS variable for the UI
+  colors: string[]; // gradient stops
+  accent: string; // also mapped to a CSS variable for the UI
 }
 
 interface DrawArgs {
   ctx: CanvasRenderingContext2D;
-  width: number;          // CSS pixels (the context is pre-scaled by DPR)
+  width: number; // CSS pixels (the context is pre-scaled by DPR)
   height: number;
   dt: number;
   theme: Theme;
@@ -536,14 +552,14 @@ audio-visualizer/
 
 ### 12.3 States to design for
 
-| State | Behavior |
-| --- | --- |
-| Empty | Large drop zone with "Drop a track or pick a preset"; ambient idle animation on the canvas |
-| Drag-over | Highlighted outline, "Release to play" |
-| Loading | Skeleton / progress for preset audio |
-| Error | Inline toast: unsupported format, decode failure, network failure with retry |
-| Paused | Visualizer eases to rest rather than freezing abruptly |
-| Mic permission denied | Explains how to re-enable |
+| State                 | Behavior                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------ |
+| Empty                 | Large drop zone with "Drop a track or pick a preset"; ambient idle animation on the canvas |
+| Drag-over             | Highlighted outline, "Release to play"                                                     |
+| Loading               | Skeleton / progress for preset audio                                                       |
+| Error                 | Inline toast: unsupported format, decode failure, network failure with retry               |
+| Paused                | Visualizer eases to rest rather than freezing abruptly                                     |
+| Mic permission denied | Explains how to re-enable                                                                  |
 
 ### 12.4 Accessibility
 
@@ -586,18 +602,18 @@ audio-visualizer/
 
 ## 15. Roadmap
 
-| Phase | Scope |
-| --- | --- |
-| **0. Setup** | Tailwind v4, shadcn/ui init, Zustand, TanStack Query, folder structure, base layout shell |
-| **1. Audio core** | `AudioEngine`, file drop, play/pause/seek, volume, time display |
-| **2. Canvas loop** | `useVisualizerLoop`, DPR resize, Waveform visualizer |
-| **3. More visuals** | Frequency Bars + Particle Spectrum, theme system, visualizer picker |
-| **4. Mixer & EQ** | Gain, 3-band EQ, playback speed, store → engine binding |
-| **5. Presets (TanStack Query)** | Preset manifest, preset audio loading, loading and error UI |
-| **6. Polish** | Settings panel, persistence, shortcuts, fullscreen, saved presets, a11y, mobile |
-| **7. Performance pass** | Profiling, FPS meter, reduced-motion, low-power mode |
-| **7b. Deploy** | Vite `base`, `BASE_URL`-aware asset paths, GitHub Actions workflow to Pages |
-| **8. Stretch** | Mic input, recording, 10-band EQ, shareable links, OffscreenCanvas |
+| Phase                           | Scope                                                                                     |
+| ------------------------------- | ----------------------------------------------------------------------------------------- |
+| **0. Setup**                    | Tailwind v4, shadcn/ui init, Zustand, TanStack Query, folder structure, base layout shell |
+| **1. Audio core**               | `AudioEngine`, file drop, play/pause/seek, volume, time display                           |
+| **2. Canvas loop**              | `useVisualizerLoop`, DPR resize, Waveform visualizer                                      |
+| **3. More visuals**             | Frequency Bars + Particle Spectrum, theme system, visualizer picker                       |
+| **4. Mixer & EQ**               | Gain, 3-band EQ, playback speed, store → engine binding                                   |
+| **5. Presets (TanStack Query)** | Preset manifest, preset audio loading, loading and error UI                               |
+| **6. Polish**                   | Settings panel, persistence, shortcuts, fullscreen, saved presets, a11y, mobile           |
+| **7. Performance pass**         | Profiling, FPS meter, reduced-motion, low-power mode                                      |
+| **7b. Deploy**                  | Vite `base`, `BASE_URL`-aware asset paths, GitHub Actions workflow to Pages               |
+| **8. Stretch**                  | Mic input, recording, 10-band EQ, shareable links, OffscreenCanvas                        |
 
 ### Definition of done (MVP)
 
