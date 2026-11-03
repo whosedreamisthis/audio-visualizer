@@ -21,11 +21,13 @@ import { PlayerBar } from '@/components/PlayerBar'
 import { bindEngineToStore } from '@/audio/bindEngineToStore'
 import { getAudioEngine } from '@/audio/engine'
 import { useAudioEvents } from '@/hooks/useAudioEvents'
+import { useApplyTheme } from '@/hooks/useApplyTheme'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useUiStore } from '@/store/uiStore'
 
 function App() {
   useAudioEvents()
+  useApplyTheme()
   useEffect(() => bindEngineToStore(getAudioEngine()), [])
 
   const controlsOpen = useUiStore((s) => s.controlsOpen)
