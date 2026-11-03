@@ -51,21 +51,23 @@ function App() {
               <SlidersHorizontal /> Controls
             </Button>
           )}
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-11"
-                  aria-label="Fullscreen"
-                />
-              }
-            >
-              <Maximize />
-            </TooltipTrigger>
-            <TooltipContent>Fullscreen (F)</TooltipContent>
-          </Tooltip>
+          {isDesktop && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-11"
+                    aria-label="Fullscreen"
+                  />
+                }
+              >
+                <Maximize />
+              </TooltipTrigger>
+              <TooltipContent>Fullscreen (F)</TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </header>
 
