@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { AudioFrame, DrawArgs, VisualizerSettings } from '@/types'
+import type {
+  AudioFrame,
+  ByteBuffer,
+  DrawArgs,
+  VisualizerSettings,
+} from '@/types'
 import { DEFAULT_VISUALIZER_SETTINGS } from '@/lib/constants'
 import { getVisualizer } from './index'
 import { getTheme } from './themes'
@@ -10,7 +15,7 @@ function fakeContext() {
   const calls: string[] = []
   const track =
     (name: string) =>
-    (..._args: unknown[]) => {
+    () => {
       calls.push(name)
     }
   const ctx = {
@@ -29,7 +34,7 @@ function fakeContext() {
   return ctx
 }
 
-function frame(wave: Uint8Array): AudioFrame {
+function frame(wave: ByteBuffer): AudioFrame {
   return {
     freq: new Uint8Array(0),
     wave,
@@ -42,7 +47,9 @@ function frame(wave: Uint8Array): AudioFrame {
 
 function drawArgs(
   ctx: ReturnType<typeof fakeContext>,
-  overrides: Partial<DrawArgs> & { settings?: Partial<VisualizerSettings> } = {},
+  overrides: Omit<Partial<DrawArgs>, 'settings'> & {
+    settings?: Partial<VisualizerSettings>
+  } = {},
 ): DrawArgs {
   const { settings, ...rest } = overrides
   return {
