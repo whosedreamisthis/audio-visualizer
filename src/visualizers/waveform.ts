@@ -1,6 +1,12 @@
 import { lerp } from '@/lib/math'
 import type { DrawArgs, Theme, Visualizer } from '@/types'
-import { fillWaveformPoints, waveformPointCount } from './waveformMath'
+import {
+  fillWaveformPoints,
+  peakAmplitude,
+  trackWavePeak,
+  waveformGain,
+  waveformPointCount,
+} from './waveformMath'
 
 /** Fraction of the canvas height the line can swing above and below center at sensitivity 1. */
 const AMPLITUDE = 0.32
@@ -46,6 +52,8 @@ export function createWaveformVisualizer(): Visualizer {
   let activity = 0
   /** 0..1, jumps on a beat and decays quickly. */
   let pulse = 0
+  /** Slowly decaying recent peak of the signal, used to scale quiet audio up. */
+  let wavePeak = 0
 
   const getGradient = (
     ctx: CanvasRenderingContext2D,
@@ -70,6 +78,7 @@ export function createWaveformVisualizer(): Visualizer {
     gradientKey = ''
     activity = 0
     pulse = 0
+    wavePeak = 0
   }
 
   return {
@@ -98,7 +107,9 @@ export function createWaveformVisualizer(): Visualizer {
       if (ys.length !== count) ys = new Float32Array(count)
 
       const mid = height / 2
-      fillWaveformPoints(ys, audio.wave, mid, height * AMPLITUDE * settings.sensitivity)
+      wavePeak = trackWavePeak(wavePeak, playing ? peakAmplitude(audio.wave) : 0, dt)
+      const gain = playing ? waveformGain(wavePeak) : 1
+      fillWaveformPoints(ys, audio.wave, mid, height * AMPLITUDE * settings.sensitivity * gain)
 
       // Idle breathing fades out as playback starts; also keep the line inside the canvas
       const idleAmp = height * 0.03 * (1 - activity)

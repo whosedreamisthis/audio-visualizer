@@ -35,3 +35,32 @@ export function fillWaveformPoints(
     out[i] = mid + byteToUnit(wave[index]) * amp
   }
 }
+
+/** Largest absolute sample (0..1) in time-domain byte data; 0 for silence or no data. */
+export function peakAmplitude(wave: Uint8Array): number {
+  let peak = 0
+  for (let i = 0; i < wave.length; i++) {
+    const v = Math.abs(wave[i] - 128)
+    if (v > peak) peak = v
+  }
+  return peak / 128
+}
+
+/** Seconds for the remembered peak to fall to about a third. */
+const PEAK_DECAY_SECONDS = 1.5
+/** Quiet material never needs more than this much lift. */
+const MAX_GAIN = 8
+/** Fraction of full swing the recent peak is scaled to. */
+const TARGET_FILL = 0.85
+/** Peaks below this are treated as this, so near-silence isn't amplified. */
+const MIN_PEAK = 0.1
+
+/** Recent peak: rises instantly, decays over a second or two. */
+export function trackWavePeak(previous: number, value: number, dt: number): number {
+  return Math.max(value, previous * Math.exp(-Math.max(dt, 0) / PEAK_DECAY_SECONDS))
+}
+
+/** Gain (1..MAX_GAIN) that scales a quiet signal's recent peak up to a fixed share of the swing. */
+export function waveformGain(peak: number): number {
+  return Math.min(MAX_GAIN, Math.max(1, TARGET_FILL / Math.max(peak, MIN_PEAK)))
+}

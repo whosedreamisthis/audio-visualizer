@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   byteToUnit,
   fillWaveformPoints,
+  peakAmplitude,
+  trackWavePeak,
+  waveformGain,
   waveformPointCount,
 } from './waveformMath'
 
@@ -64,5 +67,27 @@ describe('fillWaveformPoints', () => {
     const out = new Float32Array(5).fill(999)
     fillWaveformPoints(out, new Uint8Array(0), 40, 20)
     expect(Array.from(out)).toEqual([40, 40, 40, 40, 40])
+  })
+})
+
+describe('auto gain', () => {
+  it('measures the peak amplitude', () => {
+    expect(peakAmplitude(new Uint8Array(0))).toBe(0)
+    expect(peakAmplitude(new Uint8Array(8).fill(128))).toBe(0)
+    expect(peakAmplitude(Uint8Array.from([128, 192, 100]))).toBeCloseTo(0.5)
+  })
+
+  it('tracks a peak that rises instantly and decays', () => {
+    expect(trackWavePeak(0.2, 0.9, 0.016)).toBe(0.9)
+    const decayed = trackWavePeak(0.9, 0, 1.5)
+    expect(decayed).toBeLessThan(0.9)
+    expect(decayed).toBeGreaterThan(0.3)
+  })
+
+  it('lifts quiet signals but never shrinks loud ones or amplifies silence endlessly', () => {
+    expect(waveformGain(0.85)).toBe(1)
+    expect(waveformGain(1)).toBe(1)
+    expect(waveformGain(0.2)).toBeCloseTo(4.25)
+    expect(waveformGain(0)).toBeLessThanOrEqual(8)
   })
 })
