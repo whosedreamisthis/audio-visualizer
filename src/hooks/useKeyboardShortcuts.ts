@@ -47,7 +47,7 @@ function changeVolume(delta: number) {
 
 function seekBy(delta: number) {
   const { track, currentTime, duration } = usePlaybackStore.getState()
-  if (!track) return
+  if (!track || track.source === 'mic') return // a live input has no timeline
   const next = clamp(currentTime + delta, 0, duration || Infinity)
   seekTo(next)
   showHud(`${formatTime(next)} / ${formatTime(duration)}`)

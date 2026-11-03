@@ -5,6 +5,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { GAIN, SPEED } from '@/lib/constants'
 import { formatPercent, formatSpeed } from '@/lib/format'
 import { useAudioStore } from '@/store/audioStore'
+import { usePlaybackStore } from '@/store/playbackStore'
 
 const SPEED_CHIPS = [0.75, 1, 1.25, 1.5] as const
 
@@ -17,6 +18,8 @@ export function MixerPanel() {
   const setGain = useAudioStore((s) => s.setGain)
   const setSpeed = useAudioStore((s) => s.setSpeed)
   const setPreservePitch = useAudioStore((s) => s.setPreservePitch)
+  // speed and pitch only apply to files; a live input plays in real time
+  const live = usePlaybackStore((s) => s.track?.source === 'mic')
 
   const clipping = gain > GAIN.default
 
@@ -51,6 +54,7 @@ export function MixerPanel() {
             aria-label="Playback speed"
             getAriaValueText={(_, v) => `Speed ${formatSpeed(v)}`}
             value={[speed]}
+            disabled={live}
             min={SPEED.min}
             max={SPEED.max}
             step={SPEED.step}
@@ -64,6 +68,7 @@ export function MixerPanel() {
             if (value[0]) setSpeed(Number(value[0]))
           }}
           className="w-full"
+          disabled={live}
           spacing={1}
         >
           {SPEED_CHIPS.map((chip) => (
@@ -91,6 +96,7 @@ export function MixerPanel() {
         <Switch
           id="preserve-pitch"
           checked={preservePitch}
+          disabled={live}
           onCheckedChange={setPreservePitch}
         />
       </div>

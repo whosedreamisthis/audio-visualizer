@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { AudioEngineError } from '@/audio/AudioEngine'
 import { getAudioEngine } from '@/audio/engine'
+import { isCurrentSource, nextSourceToken } from '@/audio/sourceToken'
 import { usePlaybackStore } from '@/store/playbackStore'
 import { useUiStore } from '@/store/uiStore'
 import { useVisualizerStore } from '@/store/visualizerStore'
@@ -17,16 +18,13 @@ export function usePresetTracks() {
   })
 }
 
-/** Incremented per load so a slow earlier preset can't overwrite a newer one. */
-let loadToken = 0
-
 /** Fetch (or reuse the cached) preset audio, load it into the engine, play and apply its theme. */
 export function useLoadPreset() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (track: PresetTrack) => {
-      const token = ++loadToken
+      const token = nextSourceToken()
       const engine = getAudioEngine()
       const playback = () => usePlaybackStore.getState()
 
@@ -41,7 +39,7 @@ export function useLoadPreset() {
         staleTime: Infinity,
         gcTime: Infinity,
       })
-      if (token !== loadToken) return
+      if (!isCurrentSource(token)) return
 
       // The engine owns this URL and revokes it when the next track replaces it
       const objectUrl = URL.createObjectURL(blob)
@@ -53,10 +51,10 @@ export function useLoadPreset() {
           true,
         )
       } catch (error) {
-        if (token !== loadToken) return
+        if (!isCurrentSource(token)) return
         throw error
       }
-      if (token !== loadToken) return
+      if (!isCurrentSource(token)) return
 
       playback().setTrack(meta)
       if (track.suggestedTheme) useVisualizerStore.getState().setTheme(track.suggestedTheme)

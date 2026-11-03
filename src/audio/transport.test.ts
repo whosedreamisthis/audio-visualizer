@@ -10,8 +10,15 @@ vi.mock('sonner', () => ({ toast: { error: vi.fn(), info: vi.fn() } }))
 const track: TrackMeta = { id: 't1', name: 'Song', source: 'file', duration: 100 }
 
 function fakeEngine() {
-  return { play: vi.fn(() => Promise.resolve()), pause: vi.fn(), seek: vi.fn() }
+  return {
+    play: vi.fn(() => Promise.resolve()),
+    pause: vi.fn(),
+    seek: vi.fn(),
+    stopMicrophone: vi.fn(),
+  }
 }
+
+const micTrack: TrackMeta = { id: 't2', name: 'Microphone', source: 'mic', duration: 0 }
 
 beforeEach(() => {
   usePlaybackStore.setState(usePlaybackStore.getInitialState())
@@ -33,6 +40,10 @@ describe('getTransportAction', () => {
     expect(getTransportAction('loading', true)).toBe('none')
     expect(getTransportAction('error', true)).toBe('none')
   })
+
+  it('stops a live input instead of pausing it', () => {
+    expect(getTransportAction('playing', true, true)).toBe('stop')
+  })
 })
 
 describe('togglePlayback', () => {
@@ -51,6 +62,16 @@ describe('togglePlayback', () => {
     await togglePlayback(engine)
     expect(engine.pause).toHaveBeenCalledTimes(1)
     expect(engine.play).not.toHaveBeenCalled()
+  })
+
+  it('stops the microphone and clears its track', async () => {
+    usePlaybackStore.getState().setTrack(micTrack)
+    usePlaybackStore.getState().setStatus('playing')
+    const engine = fakeEngine()
+    await togglePlayback(engine)
+    expect(engine.stopMicrophone).toHaveBeenCalledTimes(1)
+    expect(engine.pause).not.toHaveBeenCalled()
+    expect(usePlaybackStore.getState().track).toBeNull()
   })
 
   it('does nothing with no track', async () => {
@@ -92,6 +113,13 @@ describe('seekTo', () => {
     usePlaybackStore.getState().setTrack(track)
     seekTo(500, fakeEngine())
     expect(usePlaybackStore.getState().currentTime).toBe(100)
+  })
+
+  it('ignores seeks on a live input', () => {
+    usePlaybackStore.getState().setTrack(micTrack)
+    const engine = fakeEngine()
+    seekTo(10, engine)
+    expect(engine.seek).not.toHaveBeenCalled()
   })
 
   it('ignores seeks when no track is loaded', () => {

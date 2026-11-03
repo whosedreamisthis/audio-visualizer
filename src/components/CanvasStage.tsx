@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react'
-import { FolderOpen, ListMusic, Loader2, Upload, X } from 'lucide-react'
+import { FolderOpen, ListMusic, Loader2, Mic, Upload, X } from 'lucide-react'
 import { handleAudioFiles } from '@/audio/loadAudioFile'
+import { startMicrophone } from '@/audio/mic'
 import { AudioFileInput } from '@/components/AudioFileInput'
 import { FpsMeter } from '@/components/FpsMeter'
+import { MicNotice } from '@/components/MicNotice'
 import { VisualizerCanvas } from '@/components/VisualizerCanvas'
 import { Button } from '@/components/ui/button'
 import { useFileDrop } from '@/hooks/useFileDrop'
@@ -106,6 +108,15 @@ export function CanvasStage() {
                 <ListMusic /> Use a preset
               </Button>
             </div>
+            <Button
+              variant="ghost"
+              className="mt-2 min-h-11 w-full sm:w-auto"
+              disabled={loading}
+              onClick={() => void startMicrophone()}
+            >
+              <Mic /> Use microphone
+            </Button>
+            <MicNotice className="mt-3" />
           </div>
         </div>
       )}

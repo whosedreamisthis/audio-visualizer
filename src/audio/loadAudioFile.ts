@@ -4,9 +4,7 @@ import { usePlaybackStore } from '@/store/playbackStore'
 import { useUiStore } from '@/store/uiStore'
 import { AudioEngineError } from './AudioEngine'
 import { getAudioEngine } from './engine'
-
-/** Incremented per load so a slow earlier load can't overwrite a newer one. */
-let loadToken = 0
+import { isCurrentSource, nextSourceToken } from './sourceToken'
 
 /** Load a validated audio file into the engine and start playing it. */
 export async function loadAudioFile(file: File): Promise<void> {
@@ -16,7 +14,7 @@ export async function loadAudioFile(file: File): Promise<void> {
     return
   }
 
-  const token = ++loadToken
+  const token = nextSourceToken()
   useUiStore.getState().setSourcePickerOpen(false)
   const engine = getAudioEngine()
   const playback = () => usePlaybackStore.getState()
@@ -27,12 +25,14 @@ export async function loadAudioFile(file: File): Promise<void> {
     // Runs inside the drop/click gesture, so the context may be created and resumed
     engine.init()
     const track = await engine.loadFile(file)
-    if (token !== loadToken) return
+    if (!isCurrentSource(token)) return
 
     playback().setTrack(track)
     await engine.play()
   } catch (error) {
-    if (token !== loadToken) return
+    if (!isCurrentSource(token)) return
+    // Cancelled by a newer source (e.g. the microphone), which owns the UI now
+    if (error instanceof AudioEngineError && error.code === 'aborted') return
 
     if (error instanceof AudioEngineError && error.code === 'autoplay-blocked') {
       toast.info('Press play to start the track.')
