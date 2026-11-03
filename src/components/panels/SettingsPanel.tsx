@@ -45,6 +45,7 @@ function SettingSlider({ label, field, min, max, step, format }: SliderRowProps)
         min={min}
         max={max}
         step={step}
+        getAriaValueText={(_, v) => `${label} ${format(v)}`}
         onValueChange={(v) => {
           const next = Array.isArray(v) ? v[0] : v
           updateSettings({ [field]: next })

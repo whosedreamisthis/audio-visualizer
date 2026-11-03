@@ -15,7 +15,8 @@ export const DEFAULT_BEAT_OPTIONS: BeatDetectorOptions = {
   averageSeconds: 1,
   threshold: 1.3,
   minLevel: 0.15,
-  cooldownSeconds: 0.25,
+  // 0.34 s caps beats (and so beat flashes) at 3 per second, the WCAG flash limit
+  cooldownSeconds: 0.34,
 }
 
 export interface BeatResult {
