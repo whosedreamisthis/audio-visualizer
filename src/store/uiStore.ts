@@ -16,6 +16,8 @@ interface UiData {
   fullscreen: boolean
   /** Auto-hide state for the player bar and header in fullscreen. */
   controlsVisible: boolean
+  /** Keyboard shortcut help dialog. */
+  helpOpen: boolean
 }
 
 interface UiActions {
@@ -26,6 +28,7 @@ interface UiActions {
   setActiveTab: (tab: ControlTab) => void
   setFullscreen: (fullscreen: boolean) => void
   setControlsVisible: (visible: boolean) => void
+  setHelpOpen: (open: boolean) => void
 }
 
 export type UiState = UiData & UiActions
@@ -39,6 +42,7 @@ export const useUiStore = create<UiState>()(
       activeTab: 'mixer',
       fullscreen: false,
       controlsVisible: true,
+      helpOpen: false,
 
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
@@ -47,6 +51,7 @@ export const useUiStore = create<UiState>()(
       setActiveTab: (activeTab) => set({ activeTab }),
       setFullscreen: (fullscreen) => set({ fullscreen }),
       setControlsVisible: (controlsVisible) => set({ controlsVisible }),
+      setHelpOpen: (helpOpen) => set({ helpOpen }),
     }),
     {
       name: 'av-ui',
