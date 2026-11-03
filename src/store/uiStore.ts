@@ -18,6 +18,12 @@ interface UiData {
   controlsVisible: boolean
   /** Keyboard shortcut help dialog. */
   helpOpen: boolean
+  /** Dev frame-rate readout (toggle with P or `?fps`). */
+  fpsVisible: boolean
+  /** The render loop dropped to cheaper settings because frames ran slow. */
+  qualityReduced: boolean
+  /** User chose "high quality": adaptive reduction stays off. */
+  highQualityOverride: boolean
 }
 
 interface UiActions {
@@ -29,6 +35,9 @@ interface UiActions {
   setFullscreen: (fullscreen: boolean) => void
   setControlsVisible: (visible: boolean) => void
   setHelpOpen: (open: boolean) => void
+  toggleFps: () => void
+  setQualityReduced: (reduced: boolean) => void
+  forceHighQuality: () => void
 }
 
 export type UiState = UiData & UiActions
@@ -43,6 +52,11 @@ export const useUiStore = create<UiState>()(
       fullscreen: false,
       controlsVisible: true,
       helpOpen: false,
+      fpsVisible:
+        typeof window !== 'undefined' &&
+        new URLSearchParams(window.location.search).has('fps'),
+      qualityReduced: false,
+      highQualityOverride: false,
 
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
@@ -52,6 +66,10 @@ export const useUiStore = create<UiState>()(
       setFullscreen: (fullscreen) => set({ fullscreen }),
       setControlsVisible: (controlsVisible) => set({ controlsVisible }),
       setHelpOpen: (helpOpen) => set({ helpOpen }),
+      toggleFps: () => set((s) => ({ fpsVisible: !s.fpsVisible })),
+      setQualityReduced: (qualityReduced) => set({ qualityReduced }),
+      forceHighQuality: () =>
+        set({ highQualityOverride: true, qualityReduced: false }),
     }),
     {
       name: 'av-ui',

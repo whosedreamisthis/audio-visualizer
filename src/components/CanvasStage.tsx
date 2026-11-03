@@ -5,15 +5,13 @@ import { startMicrophone } from '@/audio/mic'
 import { AudioFileInput } from '@/components/AudioFileInput'
 import { FpsMeter } from '@/components/FpsMeter'
 import { MicNotice } from '@/components/MicNotice'
+import { QualityNotice } from '@/components/QualityNotice'
 import { VisualizerCanvas } from '@/components/VisualizerCanvas'
 import { Button } from '@/components/ui/button'
 import { useFileDrop } from '@/hooks/useFileDrop'
 import { ACCEPTED_AUDIO_EXTENSIONS } from '@/lib/constants'
 import { usePlaybackStore } from '@/store/playbackStore'
 import { useUiStore } from '@/store/uiStore'
-
-const SHOW_FPS =
-  import.meta.env.DEV && new URLSearchParams(window.location.search).has('fps')
 
 const FORMATS_LABEL = ACCEPTED_AUDIO_EXTENSIONS.map((ext) =>
   ext.slice(1).toUpperCase(),
@@ -25,6 +23,7 @@ export function CanvasStage() {
   const hasTrack = usePlaybackStore((s) => s.track !== null)
   const pickerOpen = useUiStore((s) => s.sourcePickerOpen)
   const setPickerOpen = useUiStore((s) => s.setSourcePickerOpen)
+  const showFps = useUiStore((s) => s.fpsVisible)
   const dragging = useFileDrop((files) => void handleAudioFiles(files))
 
   const loading = status === 'loading'
@@ -51,7 +50,8 @@ export function CanvasStage() {
   return (
     <div className="relative size-full overflow-hidden bg-black">
       <VisualizerCanvas />
-      {SHOW_FPS && <FpsMeter />}
+      {showFps && <FpsMeter />}
+      <QualityNotice />
 
       <AudioFileInput ref={inputRef} />
 

@@ -2,7 +2,9 @@ import { useEffect, type RefObject } from 'react'
 import { getAudioEngine } from '@/audio/engine'
 import { FrameSampler } from '@/audio/frameSampler'
 import { fitCanvasToDisplay } from '@/lib/canvas'
+import { FrameBudgetMonitor, reduceQuality } from '@/lib/frameBudget'
 import { usePlaybackStore } from '@/store/playbackStore'
+import { useUiStore } from '@/store/uiStore'
 import { useVisualizerStore } from '@/store/visualizerStore'
 import { getVisualizer } from '@/visualizers'
 import { getTheme } from '@/visualizers/themes'
@@ -40,6 +42,10 @@ export function useVisualizerLoop(
     motionQuery.addEventListener('change', onMotionChange)
     let calmSource: VisualizerSettings | null = null
     let calmSettings: VisualizerSettings | null = null
+
+    const budget = new FrameBudgetMonitor()
+    let lowSource: VisualizerSettings | null = null
+    let lowSettings: VisualizerSettings | null = null
 
     // One args object reused every frame to avoid per-frame allocation
     const args: DrawArgs = {
@@ -91,6 +97,21 @@ export function useVisualizerLoop(
         drawSettings = calmSettings ?? settings
       }
 
+      // Adaptive quality: sustained slow frames drop glow and thin out particles
+      const ui = useUiStore.getState()
+      if (!ui.highQualityOverride) {
+        if (!ui.qualityReduced && budget.push(dt * 1000)) {
+          ui.setQualityReduced(true)
+        }
+        if (ui.qualityReduced) {
+          if (lowSource !== drawSettings) {
+            lowSource = drawSettings
+            lowSettings = reduceQuality(drawSettings)
+          }
+          drawSettings = lowSettings ?? drawSettings
+        }
+      }
+
       args.width = size.width
       args.height = size.height
       args.dt = dt
@@ -103,23 +124,36 @@ export function useVisualizerLoop(
       raf = requestAnimationFrame(frame)
     }
 
+    // The loop runs only while the tab is visible and the canvas is on screen
+    let onScreen = true
     const start = () => {
       if (raf) return
       last = performance.now()
+      budget.reset() // the pause itself must not count as a slow frame
       raf = requestAnimationFrame(frame)
     }
     const stop = () => {
       cancelAnimationFrame(raf)
       raf = 0
     }
-    const onVisibilityChange = () => (document.hidden ? stop() : start())
+    const sync = () => (document.hidden || !onScreen ? stop() : start())
 
-    document.addEventListener('visibilitychange', onVisibilityChange)
-    if (!document.hidden) start()
+    const intersection =
+      typeof IntersectionObserver === 'function'
+        ? new IntersectionObserver((entries) => {
+            onScreen = entries[entries.length - 1].isIntersecting
+            sync()
+          })
+        : null
+    intersection?.observe(canvas)
+
+    document.addEventListener('visibilitychange', sync)
+    sync()
 
     return () => {
       stop()
-      document.removeEventListener('visibilitychange', onVisibilityChange)
+      document.removeEventListener('visibilitychange', sync)
+      intersection?.disconnect()
       motionQuery.removeEventListener('change', onMotionChange)
       observer.disconnect()
       active?.dispose?.()

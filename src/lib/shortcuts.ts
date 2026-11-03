@@ -11,6 +11,7 @@ export type ShortcutAction =
   | 'modeBars'
   | 'modeParticles'
   | 'toggleHelp'
+  | 'toggleFps'
 
 /** The parts of a focused element that decide whether a shortcut should fire. */
 export interface KeyTarget {
@@ -45,6 +46,7 @@ const KEY_ACTIONS: Record<string, ShortcutAction> = {
   '2': 'modeBars',
   '3': 'modeParticles',
   '?': 'toggleHelp',
+  p: 'toggleFps',
 }
 
 /** Display list for the help dialog; keep in sync with `KEY_ACTIONS`. */
@@ -56,6 +58,7 @@ export const SHORTCUT_HELP: { keys: string[]; label: string }[] = [
   { keys: ['L'], label: 'Loop' },
   { keys: ['F'], label: 'Fullscreen' },
   { keys: ['1', '2', '3'], label: 'Waveform / Bars / Particles' },
+  { keys: ['P'], label: 'Performance meter (FPS)' },
   { keys: ['?'], label: 'Show this help' },
 ]
 

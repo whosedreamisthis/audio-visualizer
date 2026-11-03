@@ -24,6 +24,7 @@ describe('mapKeyToAction', () => {
     expect(mapKeyToAction(press('2'))).toBe('modeBars')
     expect(mapKeyToAction(press('3'))).toBe('modeParticles')
     expect(mapKeyToAction(press('?'))).toBe('toggleHelp')
+    expect(mapKeyToAction(press('p'))).toBe('toggleFps')
   })
 
   it('is case-insensitive for letters', () => {
