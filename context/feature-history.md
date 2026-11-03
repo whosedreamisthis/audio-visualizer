@@ -80,3 +80,12 @@
   - `src/visualizers/particlesMath.ts`: struct-of-arrays `ParticlePool`, `spawn` (fills free slots only, rotating cursor), `stepPool`, `aliveCount`.
   - Registered in `src/visualizers/index.ts`; the particle count slider (100-3000, default 800) already existed.
   - Tests: 14 new (180 total): pool helper and a draw smoke suite against a fake canvas with stubbed `document` and `matchMedia`. 60 fps at 1080p, burst look and memory over several minutes were not verified in a browser. Known nits: spawn closures are created per frame; a stray `* 1` in the sparkle radius.
+
+- **Visualizer Picker and Themes:** The mode and theme pickers are now standalone components, and the selected theme drives the app chrome accent as well as the canvas.
+  - `src/components/VisualizerPicker.tsx`: the existing shadcn ToggleGroup for Waveform / Bars / Particles extracted from `VisualPanel`, with icons and tooltips that also show the future `1/2/3` shortcut hints. One mode always stays selected.
+  - `src/components/ThemePicker.tsx`: swatches built from `THEMES` in `src/visualizers/themes.ts` (previously a hardcoded Tailwind list), so a new theme needs only a new entry. The active swatch has a ring and a checkmark, not color alone.
+  - `src/hooks/useApplyTheme.ts`: sets `--accent`, `--primary`, `--ring` and their foregrounds on `document.documentElement` on load and whenever `themeId` changes (called from `App`). `--primary` is included because sliders use it; this also tints the hover background of ghost buttons, since shadcn uses `--accent` for hover.
+  - `src/lib/color.ts`: WCAG luminance and contrast helpers; `readableForeground` picks near-black or near-white text for an accent.
+  - `VisualPanel.tsx` reduced to the two pickers plus `SettingsPanel`.
+  - Already present and unchanged: dispose/init on mode switch in `useVisualizerLoop.ts`, persistence of `mode` and `themeId` in the visualizer store. `1/2/3` shortcuts are left to the shortcuts feature.
+  - Tests: 3 new in `src/lib/color.test.ts` (183 total), including AA contrast on every theme accent. No component tests; tooltips and live theme switching were not checked in a browser.
