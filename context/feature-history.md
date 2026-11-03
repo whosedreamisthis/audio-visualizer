@@ -67,3 +67,10 @@
   - Changing the bar count (slider or narrow window) resamples current heights, peaks into the new arrays instead of zeroing them, so bars do not flicker. Found in review.
   - Registered in `src/visualizers/index.ts`.
   - Tests: 15 new (162 total): log-edge monotonicity and coverage, bar count reduction, layout, peak cap physics, and draw smoke tests against a fake canvas (registration, mirror, beat pulse, live count change, paused settle, empty and zero-size canvas, gradient reuse). Visual and listening checks were not done in a browser.
+
+- **Visualizer Settings:** The Visual tab now has live controls for how the visualizers analyze and draw, all bound to `visualizerStore.settings` (persisted).
+  - `src/components/panels/SettingsPanel.tsx`: FFT size button group (512/1024/2048/4096, one click commits), sliders for smoothing, sensitivity, bar count, particle count and line width (applied while dragging, each with a per-row reset), glow and mirror switches, and a "Reset visual settings" button. Bar count, particle count and line width show only for bars, particles and waveform respectively.
+  - `src/components/panels/VisualPanel.tsx`: static controls replaced by `SettingsPanel`; the theme picker now reads and sets the store, so the theme persists.
+  - Store, persistence and engine binding (FFT size, smoothing) already existed from the State Stores feature; visualizers already read settings through `getState()` each frame, so nothing restarts the loop. Glow defaults to off.
+  - `src/visualizers/bars.ts`: honors `settings.glow` (accent shadow, swells on beats, reset after fill) and draws a gentle outward ripple when idle instead of going blank. `src/visualizers/waveform.ts`: idle animation enlarged to two travelling ripples (about 8% of height) with edge-softened envelope.
+  - Tests: `bars.test.ts` updated for the idle ripple (165 total). No new tests for the panel. Particle count has no visible effect until the particles visualizer exists; not checked in a browser by the assistant.
