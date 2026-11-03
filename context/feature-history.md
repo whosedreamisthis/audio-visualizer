@@ -89,3 +89,9 @@
   - `VisualPanel.tsx` reduced to the two pickers plus `SettingsPanel`.
   - Already present and unchanged: dispose/init on mode switch in `useVisualizerLoop.ts`, persistence of `mode` and `themeId` in the visualizer store. `1/2/3` shortcuts are left to the shortcuts feature.
   - Tests: 3 new in `src/lib/color.test.ts` (183 total), including AA contrast on every theme accent. No component tests; tooltips and live theme switching were not checked in a browser.
+
+- **Mixer Panel:** The Mixer tab's gain, speed and pitch controls are now live instead of static placeholders.
+  - `src/components/panels/MixerPanel.tsx`: gain slider (0-200%, step 1%) with percent readout, double-click or reset to 100%; speed slider (0.5x-2x, step 0.05) with 0.75x/1x/1.25x/1.5x chips that highlight when the speed matches; "Preserve pitch" switch. All read and write `audioStore`; `bindEngineToStore` already applied gain (ramped with `setTargetAtTime`), playback rate and `preservesPitch` to the engine, and the store already persisted and clamped them. Sliders expose `aria-valuetext` ("Gain 120%", "Speed 1.25x").
+  - `src/components/ControlRow.tsx`: new `warning` prop; the readout turns amber, shows a triangle-alert icon and adds a screen-reader warning when gain is above 100%.
+  - `EqPanel.tsx` is still a static placeholder and does not use `ControlRow` yet; that is left to the EQ feature. `SettingsPanel` already used `ControlRow`.
+  - Tests: none new (183 pass). Audible gain/speed changes, pitch behavior and reload restore were not checked in a browser.
