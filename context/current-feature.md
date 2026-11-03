@@ -1,18 +1,30 @@
 # Current Feature
 
-<!-- Feature name and short description -->
+Waveform Visualizer (see `context/features/waveform-visualizer.md`): an oscilloscope-style line with a fading trail, glow and beat pulse.
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- [ ] `src/visualizers/waveformMath.ts`: point count, sample-to-position helper (with tests)
+- [ ] `src/visualizers/waveform.ts` implementing `Visualizer`, registered as `waveform`
+- [ ] Smooth path from the time-domain data, centered, amplitude scaled by sensitivity, at most about one point per 2 px
+- [ ] Trail: low-alpha background fill each frame instead of a hard clear
+- [ ] Theme gradient line (cached per theme and width), width from `settings.lineWidth`
+- [ ] `mirror` option: reflected second line
+- [ ] Glow via `shadowBlur`, only when `settings.glow` is on
+- [ ] Beat pulse: line width and glow swell on beat
+- [ ] Idle: flat line with a slow breathing motion, eased in and out with play state
+- [ ] Wire the Visual tab's visualizer mode toggle to the store so modes can be switched
+- [ ] `npm test`, `npm run lint` and `npm run build` pass
 
 ## Notes
 
-<!-- Any extra notes -->
+- No allocation in `draw`: the points array and gradient are reused.
+- Wiring the mode toggle is a small first piece of `visualizer-picker-and-themes`, needed to see this visualizer; the theme picker and shortcuts come with that feature.
+- Verify by eye: switch to Waveform in Controls → Visual, play a song, try Mirror and Glow (not wired yet; defaults are mirror on, glow off).
 
 ## Completed Features
 

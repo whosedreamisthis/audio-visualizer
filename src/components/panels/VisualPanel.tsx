@@ -4,7 +4,13 @@ import { ControlRow } from '@/components/ControlRow'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { VISUALIZER_MODES } from '@/lib/constants'
 import { cn } from '@/lib/utils'
+import { useVisualizerStore } from '@/store/visualizerStore'
+import type { VisualizerMode } from '@/types'
+
+const isVisualizerMode = (value: unknown): value is VisualizerMode =>
+  VISUALIZER_MODES.some((m) => m === value)
 
 const MODES = [
   { id: 'waveform', label: 'Waveform', icon: AudioLines },
@@ -24,12 +30,23 @@ const FFT_SIZES = ['512', '1024', '2048', '4096']
 
 export function VisualPanel() {
   const [theme, setTheme] = useState('neon')
+  const mode = useVisualizerStore((s) => s.mode)
+  const setMode = useVisualizerStore((s) => s.setMode)
 
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <span className="text-sm font-medium">Visualizer</span>
-        <ToggleGroup defaultValue={['bars']} className="w-full" spacing={1}>
+        <ToggleGroup
+          value={[mode]}
+          onValueChange={(value) => {
+            // clicking the active item would deselect it; keep exactly one mode selected
+            const next = value[0]
+            if (isVisualizerMode(next)) setMode(next)
+          }}
+          className="w-full"
+          spacing={1}
+        >
           {MODES.map(({ id, label, icon: Icon }) => (
             <ToggleGroupItem
               key={id}
