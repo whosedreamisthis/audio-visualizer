@@ -1,26 +1,18 @@
-# Current Feature: Microphone Input (Enhanced)
+# Current Feature
 
-Visualize live sound from the user's microphone as an alternative to a file.
+<!-- Feature name and short description -->
 
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
-- "Use microphone" button in the empty state and the Presets tab
-- `engine.useMicrophone()` using `getUserMedia({ audio })` and a `MediaStreamAudioSourceNode` into the same graph (EQ and analyser work; output to speakers is muted by default to avoid feedback)
-- Switching back to a file/preset disconnects the mic source and stops all `MediaStream` tracks
-- Permission handling: prompt, granted, denied (explains how to re-enable), no device available
-- Playback controls adapt: seek/speed disabled for the live source; track badge shows "mic"
-- "Monitor through speakers" switch with a feedback warning, off by default
+<!-- Goals and requirements -->
 
 ## Notes
 
-- Requires HTTPS or localhost (satisfied by GitHub Pages)
-- Tracks stopped on unmount, on source switch and when the tab closes
-- Echo cancellation / noise suppression constraints turned off for accurate visuals (configurable)
-- Acceptance: speaking or clapping drives the visualizers in real time; denying permission shows a helpful message and the app remains usable; no lingering "recording" indicator in the browser after switching away
+<!-- Any extra notes -->
 
 ## Completed Features
 
@@ -43,3 +35,4 @@ In Progress
 - **Equalizer:** EQ tab with three live band sliders, signed dB readouts, presets with Custom detection, reset, bypass and a response curve; key files `src/components/panels/EqPanel.tsx`, `src/lib/eqCurve.ts`.
 - **Keyboard Shortcuts and Fullscreen:** Global key shortcuts, page fullscreen with auto-hiding controls and cursor, `?` help dialog and HUD toasts; key files `src/lib/shortcuts.ts`, `src/hooks/useKeyboardShortcuts.ts`, `useFullscreen.ts`.
 - **Preset Library:** Manifest-driven preset tracks loaded on demand via TanStack Query, with clickable cards, skeletons and Retry; key files `src/api/presets.ts`, `hooks.ts`, `src/components/PresetLibrary.tsx`.
+- **Microphone Input:** Live microphone as a source with a speaker-monitor gate, permission help and live-aware controls; key files `src/audio/AudioEngine.ts`, `mic.ts`, `src/store/micStore.ts`, `src/components/MicInput.tsx`.
