@@ -60,3 +60,10 @@
   - `src/visualizers/waveformMath.ts`: `waveformPointCount` (about one point per 2 px, minimum 8), `byteToUnit`, `fillWaveformPoints` (evenly spaced sampling; silence and missing data map to the center).
   - Registered in `src/visualizers/index.ts`; the Visual tab's visualizer mode toggle in `VisualPanel.tsx` now reads and sets `visualizerStore.mode` (first piece of the picker feature).
   - Tests: 14 new (147 total): point math plus a smoke test of the draw routine against a fake canvas (registration, mirror, glow, empty data, zero-size canvas, gradient reuse). Mirror, glow and line width controls are still static until `visualizer-settings`.
+
+- **Frequency Bars Visualizer:** The Bars mode now has its own classic spectrum analyzer; only Particles still uses the shared fallback.
+  - `src/visualizers/bars.ts`: bars grouped on log-spaced bin edges (reusing `computeBarEdges` and the shaping helpers in `spectrum.ts`), heights eased with fast attack (32/s) and slower release (9/s), falling to zero when paused. One batched path of rounded bars plus one for peak caps (accent color); gap is 22% of each bar slot. Mirror grows bars up and down from the vertical center with a symmetric gradient. Beat pulse adds about 12% height and a brightness boost. Gradient cached by theme, height and mirror; edges cached numerically. No per-frame allocation.
+  - `src/visualizers/barsMath.ts`: `effectiveBarCount` (about 6 px minimum per bar, never below 4), `barLayout`, `updatePeakCap` (0.35 s hold, then gravity, never below the bar).
+  - Changing the bar count (slider or narrow window) resamples current heights, peaks and cap levels into the new arrays instead of zeroing them, so bars do not flicker. Found in review.
+  - Registered in `src/visualizers/index.ts`.
+  - Tests: 15 new (162 total): log-edge monotonicity and coverage, bar count reduction, layout, peak cap physics, and draw smoke tests against a fake canvas (registration, mirror, beat pulse, live count change, paused settle, empty and zero-size canvas, gradient reuse). Visual and listening checks were not done in a browser.
