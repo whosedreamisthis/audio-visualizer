@@ -90,6 +90,9 @@ function runAction(action: ShortcutAction) {
       ui.setHelpOpen(!ui.helpOpen)
       break
     }
+    case 'toggleFps':
+      useUiStore.getState().toggleFps()
+      break
     default: {
       const mode = MODE_ACTIONS[action]
       if (mode) {

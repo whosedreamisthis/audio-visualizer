@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { ControlRow } from '@/components/ControlRow'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
@@ -11,7 +12,7 @@ const SPEED_CHIPS = [0.75, 1, 1.25, 1.5] as const
 
 const sliderValue = (v: number | readonly number[]) => (Array.isArray(v) ? v[0] : v)
 
-export function MixerPanel() {
+export const MixerPanel = memo(function MixerPanel() {
   const gain = useAudioStore((s) => s.gain)
   const speed = useAudioStore((s) => s.speed)
   const preservePitch = useAudioStore((s) => s.preservePitch)
@@ -102,4 +103,4 @@ export function MixerPanel() {
       </div>
     </div>
   )
-}
+})

@@ -1,14 +1,29 @@
+import { lazy, Suspense } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EqPanel } from '@/components/panels/EqPanel'
 import { MixerPanel } from '@/components/panels/MixerPanel'
 import { PresetsPanel } from '@/components/panels/PresetsPanel'
-import { VisualPanel } from '@/components/panels/VisualPanel'
 import { useUiStore, type ControlTab } from '@/store/uiStore'
+
+// The settings panel is off screen until its tab is chosen, so it loads on demand
+const VisualPanel = lazy(() =>
+  import('@/components/panels/VisualPanel').then((m) => ({
+    default: m.VisualPanel,
+  })),
+)
 
 const TABS: { id: ControlTab; label: string; panel: React.ReactNode }[] = [
   { id: 'mixer', label: 'Mixer', panel: <MixerPanel /> },
   { id: 'eq', label: 'EQ', panel: <EqPanel /> },
-  { id: 'visual', label: 'Visual', panel: <VisualPanel /> },
+  {
+    id: 'visual',
+    label: 'Visual',
+    panel: (
+      <Suspense fallback={<p className="text-sm text-muted-foreground">Loading…</p>}>
+        <VisualPanel />
+      </Suspense>
+    ),
+  },
   { id: 'presets', label: 'Presets', panel: <PresetsPanel /> },
 ]
 

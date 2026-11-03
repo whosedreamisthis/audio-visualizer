@@ -1,9 +1,10 @@
+import { memo } from 'react'
 import { MicInput } from '@/components/MicInput'
 import { PresetLibrary } from '@/components/PresetLibrary'
 import { SavedPresets } from '@/components/SavedPresets'
 import { Separator } from '@/components/ui/separator'
 
-export function PresetsPanel() {
+export const PresetsPanel = memo(function PresetsPanel() {
   return (
     <div className="space-y-6">
       <section className="space-y-2">
@@ -23,4 +24,4 @@ export function PresetsPanel() {
       <SavedPresets />
     </div>
   )
-}
+})

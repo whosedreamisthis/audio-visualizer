@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
@@ -61,7 +61,7 @@ function EqCurve({ gains, bypass }: { gains: Record<EqBandId, number>; bypass: b
   )
 }
 
-export function EqPanel() {
+export const EqPanel = memo(function EqPanel() {
   const eq = useAudioStore((s) => s.eq)
   const bypass = useAudioStore((s) => s.eqBypass)
   const setEqBand = useAudioStore((s) => s.setEqBand)
@@ -142,4 +142,4 @@ export function EqPanel() {
       </div>
     </div>
   )
-}
+})

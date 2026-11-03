@@ -1,8 +1,9 @@
+import { memo } from 'react'
 import { SettingsPanel } from '@/components/panels/SettingsPanel'
 import { ThemePicker } from '@/components/ThemePicker'
 import { VisualizerPicker } from '@/components/VisualizerPicker'
 
-export function VisualPanel() {
+export const VisualPanel = memo(function VisualPanel() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -18,4 +19,4 @@ export function VisualPanel() {
       <SettingsPanel />
     </div>
   )
-}
+})

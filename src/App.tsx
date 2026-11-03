@@ -19,7 +19,7 @@ import { ControlPanel } from '@/components/ControlPanel'
 import { LiveAnnouncer } from '@/components/LiveAnnouncer'
 import { OpenFileButton } from '@/components/OpenFileButton'
 import { PlayerBar } from '@/components/PlayerBar'
-import { ShortcutsDialog } from '@/components/ShortcutsDialog'
+import { LazyShortcutsDialog } from '@/components/LazyShortcutsDialog'
 import { bindEngineToStore } from '@/audio/bindEngineToStore'
 import { getAudioEngine } from '@/audio/engine'
 import { useAudioEvents } from '@/hooks/useAudioEvents'
@@ -131,7 +131,7 @@ function App() {
         <PlayerBar />
       </div>
 
-      <ShortcutsDialog />
+      <LazyShortcutsDialog />
 
       {!isDesktop && !fullscreen && (
         <Sheet open={controlsOpen} onOpenChange={setControlsOpen}>
