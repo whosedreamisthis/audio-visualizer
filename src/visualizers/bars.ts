@@ -35,6 +35,13 @@ function addRoundedRect(
 }
 
 /** Classic spectrum analyzer: log-spaced bars with eased heights. */
+/** Height (0..1) of bar `i` of `count` while nothing is playing. */
+function idleLevel(i: number, count: number, time: number): number {
+  const t = i / count
+  const wave = 0.5 + 0.5 * Math.sin(time * 1.6 - i * 0.35)
+  return 0.04 + 0.09 * wave * (1 - 0.7 * t)
+}
+
 export function createBarsVisualizer(): Visualizer {
   let count = 0
   let heights = new Float32Array(0)
@@ -120,7 +127,7 @@ export function createBarsVisualizer(): Visualizer {
       gradient = null
     },
     dispose: reset,
-    draw({ ctx, width, height, dt, theme, settings, audio, playing }: DrawArgs) {
+    draw({ ctx, width, height, dt, time, theme, settings, audio, playing }: DrawArgs) {
       if (width <= 0 || height <= 0) return
 
       // Each frequency bar is drawn twice, left and right of center, so the layout stays
@@ -158,9 +165,14 @@ export function createBarsVisualizer(): Visualizer {
       ctx.globalAlpha = 0.85 + 0.15 * pulse
       ctx.fillStyle = getGradient(ctx, theme, height, mirror)
       ctx.beginPath()
+      if (settings.glow) {
+        ctx.shadowColor = theme.accent
+        ctx.shadowBlur = 12 + pulse * 18
+      }
 
       for (let i = 0; i < count; i++) {
-        let target = 0
+        // Idle: a slow ripple travelling outward from the center, fading toward the edges
+        let target = playing ? 0 : idleLevel(i, count, time)
         if (playing && bins > 0) {
           const compressed = compressLevel(averageBins(audio.freq, edges[i], edges[i + 1]))
           peaks[i] = trackPeak(peaks[i], compressed, dt)
@@ -182,6 +194,7 @@ export function createBarsVisualizer(): Visualizer {
         }
       }
       ctx.fill()
+      ctx.shadowBlur = 0
       ctx.globalAlpha = 1
     },
   }

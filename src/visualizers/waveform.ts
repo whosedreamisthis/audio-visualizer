@@ -112,13 +112,21 @@ export function createWaveformVisualizer(): Visualizer {
       fillWaveformPoints(ys, audio.wave, mid, height * AMPLITUDE * settings.sensitivity * gain)
 
       // Idle breathing fades out as playback starts; also keep the line inside the canvas
-      const idleAmp = height * 0.03 * (1 - activity)
+      const idleAmp = height * 0.08 * (1 - activity)
       const phase = time * 1.6
+      const phase2 = time * 0.7
       const minY = EDGE_PAD
       const maxY = height - EDGE_PAD
       for (let i = 0; i < count; i++) {
         let y = ys[i]
-        if (idleAmp > 0.01) y += Math.sin((i / count) * Math.PI * 4 + phase) * idleAmp
+        if (idleAmp > 0.01) {
+          // Two travelling sines of different speed and length, softened toward the edges
+          const t = i / count
+          const envelope = Math.sin(t * Math.PI)
+          const ripple =
+            Math.sin(t * Math.PI * 4 - phase) * 0.65 + Math.sin(t * Math.PI * 7 + phase2) * 0.35
+          y += ripple * envelope * idleAmp
+        }
         ys[i] = y < minY ? minY : y > maxY ? maxY : y
       }
 

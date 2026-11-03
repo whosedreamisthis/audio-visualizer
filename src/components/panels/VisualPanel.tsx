@@ -1,13 +1,10 @@
-import { useState } from 'react'
 import { AudioLines, BarChart3, Check, Sparkles } from 'lucide-react'
-import { ControlRow } from '@/components/ControlRow'
-import { Slider } from '@/components/ui/slider'
-import { Switch } from '@/components/ui/switch'
+import { SettingsPanel } from '@/components/panels/SettingsPanel'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { VISUALIZER_MODES } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { useVisualizerStore } from '@/store/visualizerStore'
-import type { VisualizerMode } from '@/types'
+import type { ThemeId, VisualizerMode } from '@/types'
 
 const isVisualizerMode = (value: unknown): value is VisualizerMode =>
   VISUALIZER_MODES.some((m) => m === value)
@@ -18,7 +15,7 @@ const MODES = [
   { id: 'particles', label: 'Particles', icon: Sparkles },
 ]
 
-const THEMES = [
+const THEMES: { id: ThemeId; label: string; gradient: string }[] = [
   { id: 'neon', label: 'Neon', gradient: 'from-cyan-400 to-fuchsia-500' },
   { id: 'sunset', label: 'Sunset', gradient: 'from-orange-400 via-rose-500 to-purple-600' },
   { id: 'ocean', label: 'Ocean', gradient: 'from-sky-400 to-teal-500' },
@@ -26,10 +23,9 @@ const THEMES = [
   { id: 'aurora', label: 'Aurora', gradient: 'from-emerald-400 via-teal-400 to-violet-500' },
 ]
 
-const FFT_SIZES = ['512', '1024', '2048', '4096']
-
 export function VisualPanel() {
-  const [theme, setTheme] = useState('neon')
+  const theme = useVisualizerStore((s) => s.themeId)
+  const setTheme = useVisualizerStore((s) => s.setTheme)
   const mode = useVisualizerStore((s) => s.mode)
   const setMode = useVisualizerStore((s) => s.setMode)
 
@@ -89,43 +85,7 @@ export function VisualPanel() {
         </p>
       </div>
 
-      <ControlRow label="FFT size" value="2048">
-        <ToggleGroup defaultValue={['2048']} className="w-full" spacing={1}>
-          {FFT_SIZES.map((size) => (
-            <ToggleGroupItem
-              key={size}
-              value={size}
-              size="sm"
-              className="min-h-9 flex-1"
-            >
-              {size}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-      </ControlRow>
-
-      <ControlRow label="Smoothing" value="0.80">
-        <Slider aria-label="Smoothing" defaultValue={[0.8]} min={0} max={0.99} step={0.01} />
-      </ControlRow>
-
-      <ControlRow label="Sensitivity" value="1.0x">
-        <Slider aria-label="Sensitivity" defaultValue={[1]} min={0.5} max={3} step={0.1} />
-      </ControlRow>
-
-      <ControlRow label="Bar count" value="64">
-        <Slider aria-label="Bar count" defaultValue={[64]} min={16} max={128} step={1} />
-      </ControlRow>
-
-      <div className="space-y-3 rounded-lg border p-3">
-        <div className="flex items-center justify-between">
-          <label htmlFor="glow" className="text-sm font-medium">Glow</label>
-          <Switch id="glow" />
-        </div>
-        <div className="flex items-center justify-between">
-          <label htmlFor="mirror" className="text-sm font-medium">Mirror</label>
-          <Switch id="mirror" defaultChecked />
-        </div>
-      </div>
+      <SettingsPanel />
     </div>
   )
 }
