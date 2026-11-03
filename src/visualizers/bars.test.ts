@@ -117,7 +117,7 @@ describe('bars visualizer', () => {
     expect(ctx.calls.filter((c) => c === 'moveTo').length).toBeGreaterThanOrEqual(48)
   })
 
-  it('settles to nothing drawn when paused, without snapping', () => {
+  it('settles to a small idle ripple when paused, without snapping or going blank', () => {
     const visualizer = createBarsVisualizer()
     const ctx = fakeContext()
     visualizer.draw(drawArgs(ctx))
@@ -131,7 +131,7 @@ describe('bars visualizer', () => {
       last = fakeContext()
       visualizer.draw(drawArgs(last, { playing: false }))
     }
-    expect(last.calls.filter((c) => c === 'moveTo')).toHaveLength(0)
+    expect(last.calls.filter((c) => c === 'moveTo').length).toBeGreaterThan(0)
   })
 
   it('brightens on a beat and relaxes afterwards', () => {
