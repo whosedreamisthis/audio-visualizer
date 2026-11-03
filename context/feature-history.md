@@ -95,3 +95,7 @@
   - `src/components/ControlRow.tsx`: new `warning` prop; the readout turns amber, shows a triangle-alert icon and adds a screen-reader warning when gain is above 100%.
   - `EqPanel.tsx` is still a static placeholder and does not use `ControlRow` yet; that is left to the EQ feature. `SettingsPanel` already used `ControlRow`.
   - Tests: none new (183 pass). Audible gain/speed changes, pitch behavior and reload restore were not checked in a browser.
+- **Equalizer:** The EQ tab's sliders, presets and bypass are now live instead of static placeholders.
+  - `src/components/panels/EqPanel.tsx`: three vertical sliders built from `EQ_BANDS` (±12 dB, step 0.5) with signed dB readouts and `aria-valuetext`; preset toggle group (Flat, Bass Boost, Vocal, Treble, Lo-Fi) whose selected item uses the loop-button highlight, shown as "Preset: Custom" when no preset matches; "Reset to flat"; bypass switch; small canvas showing the combined response curve (dimmed while bypassed). All read and write `audioStore`; the engine ramp, persistence, bypass-to-flat binding and `src/lib/eqPresets.ts` already existed.
+  - `src/lib/eqCurve.ts`: pure RBJ biquad math for shelf and peaking bands, used for the curve instead of `getFrequencyResponse`.
+  - Tests: `eqCurve.test.ts` (flat, low boost, mid peak); 186 pass. Audible EQ change was confirmed by the user in the browser.
