@@ -1,6 +1,6 @@
 import { lerp } from '@/lib/math'
 import type { DrawArgs, Theme, Visualizer } from '@/types'
-import { barLayout, effectiveBarCount, updatePeakCap } from './barsMath'
+import { barLayout, effectiveBarCount } from './barsMath'
 import {
   averageBins,
   compressLevel,
@@ -16,8 +16,6 @@ const RELEASE = 9
 const MAX_BAR = 0.8
 const MAX_BAR_MIRROR = 0.42
 const BASELINE = 0.92
-const CAP_HEIGHT = 3
-const CAP_GAP = 3
 
 /** Add a rounded rectangle (radius capped to fit) to the current path. */
 function addRoundedRect(
@@ -36,14 +34,11 @@ function addRoundedRect(
   ctx.closePath()
 }
 
-/** Classic spectrum analyzer: log-spaced bars with eased heights and falling peak caps. */
+/** Classic spectrum analyzer: log-spaced bars with eased heights. */
 export function createBarsVisualizer(): Visualizer {
   let count = 0
   let heights = new Float32Array(0)
   let peaks = new Float32Array(0)
-  let capLevels = new Float32Array(0)
-  let capVelocities = new Float32Array(0)
-  let capHolds = new Float32Array(0)
 
   let edges: Uint16Array = new Uint16Array(0)
   let edgesCount = -1
@@ -71,9 +66,6 @@ export function createBarsVisualizer(): Visualizer {
     count = next
     heights = resample(heights, next)
     peaks = resample(peaks, next)
-    capLevels = resample(capLevels, next)
-    capVelocities = new Float32Array(next)
-    capHolds = new Float32Array(next)
   }
 
   const getGradient = (
@@ -112,9 +104,6 @@ export function createBarsVisualizer(): Visualizer {
     count = 0
     heights = new Float32Array(0)
     peaks = new Float32Array(0)
-    capLevels = new Float32Array(0)
-    capVelocities = new Float32Array(0)
-    capHolds = new Float32Array(0)
     edges = new Uint16Array(0)
     edgesCount = edgesBins = edgesRate = -1
     gradient = null
@@ -134,7 +123,10 @@ export function createBarsVisualizer(): Visualizer {
     draw({ ctx, width, height, dt, theme, settings, audio, playing }: DrawArgs) {
       if (width <= 0 || height <= 0) return
 
-      const wanted = effectiveBarCount(settings.barCount, width)
+      // Each frequency bar is drawn twice, left and right of center, so the layout stays
+      // centered: lowest frequencies in the middle, highest at both edges
+      const total = effectiveBarCount(settings.barCount, width)
+      const wanted = Math.ceil(total / 2)
       if (wanted !== count) allocate(wanted)
 
       const bins = audio.freq.length
@@ -152,7 +144,7 @@ export function createBarsVisualizer(): Visualizer {
       const mirror = settings.mirror
       const attack = 1 - Math.exp(-dt * ATTACK)
       const release = 1 - Math.exp(-dt * RELEASE)
-      const { barWidth, gap } = barLayout(count, width)
+      const { barWidth, gap } = barLayout(count * 2, width)
       const slot = barWidth + gap
       const offsetX = gap / 2
       const mid = height / 2
@@ -176,36 +168,21 @@ export function createBarsVisualizer(): Visualizer {
         }
 
         heights[i] = lerp(heights[i], target, target > heights[i] ? attack : release)
-        updatePeakCap(capLevels, capVelocities, capHolds, i, heights[i], dt)
 
         const barHeight = Math.min(heights[i] * maxBar * scale, maxBar * 1.1)
         if (barHeight < 1) continue
-        const x = offsetX + i * slot
+        const right = offsetX + (count + i) * slot
+        const left = offsetX + (count - 1 - i) * slot
         if (mirror) {
-          addRoundedRect(ctx, x, mid - barHeight, barWidth, barHeight * 2)
+          addRoundedRect(ctx, right, mid - barHeight, barWidth, barHeight * 2)
+          addRoundedRect(ctx, left, mid - barHeight, barWidth, barHeight * 2)
         } else {
-          addRoundedRect(ctx, x, baseline - barHeight, barWidth, barHeight)
+          addRoundedRect(ctx, right, baseline - barHeight, barWidth, barHeight)
+          addRoundedRect(ctx, left, baseline - barHeight, barWidth, barHeight)
         }
       }
       ctx.fill()
-
-      // Peak caps sit above each bar (and below it when mirrored)
       ctx.globalAlpha = 1
-      ctx.fillStyle = theme.accent
-      ctx.beginPath()
-      for (let i = 0; i < count; i++) {
-        const capOffset = capLevels[i] * maxBar * scale
-        if (capOffset < 1) continue
-        const x = offsetX + i * slot
-        const top = Math.min(capOffset, maxBar * 1.1) + CAP_GAP
-        if (mirror) {
-          addRoundedRect(ctx, x, mid - top - CAP_HEIGHT, barWidth, CAP_HEIGHT)
-          addRoundedRect(ctx, x, mid + top, barWidth, CAP_HEIGHT)
-        } else {
-          addRoundedRect(ctx, x, baseline - top - CAP_HEIGHT, barWidth, CAP_HEIGHT)
-        }
-      }
-      ctx.fill()
     },
   }
 }

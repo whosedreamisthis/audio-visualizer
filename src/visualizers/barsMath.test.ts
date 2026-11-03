@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   MIN_BARS,
-  PEAK_HOLD_SECONDS,
   barLayout,
   effectiveBarCount,
-  updatePeakCap,
 } from './barsMath'
 import { computeBarEdges } from './spectrum'
 
@@ -48,28 +46,5 @@ describe('barLayout', () => {
     const narrow = barLayout(32, 480)
     expect(wide.gap).toBeGreaterThan(narrow.gap)
     expect((wide.barWidth + wide.gap) * 32).toBeCloseTo(960)
-  })
-})
-
-describe('updatePeakCap', () => {
-  const make = () => [new Float32Array(1), new Float32Array(1), new Float32Array(1)] as const
-
-  it('rises with the bar, holds, then falls but never below the bar', () => {
-    const [peaks, vel, holds] = make()
-    updatePeakCap(peaks, vel, holds, 0, 0.8, 1 / 60)
-    expect(peaks[0]).toBeCloseTo(0.8)
-    expect(holds[0]).toBeCloseTo(PEAK_HOLD_SECONDS)
-
-    // Still holding
-    updatePeakCap(peaks, vel, holds, 0, 0.2, 0.1)
-    expect(peaks[0]).toBeCloseTo(0.8)
-
-    // Hold expires, then it falls
-    for (let i = 0; i < 20; i++) updatePeakCap(peaks, vel, holds, 0, 0.2, 1 / 60)
-    expect(peaks[0]).toBeLessThan(0.8)
-    expect(peaks[0]).toBeGreaterThanOrEqual(0.2)
-
-    for (let i = 0; i < 600; i++) updatePeakCap(peaks, vel, holds, 0, 0.2, 1 / 60)
-    expect(peaks[0]).toBeCloseTo(0.2)
   })
 })

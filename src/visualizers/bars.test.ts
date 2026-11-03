@@ -61,21 +61,34 @@ describe('bars visualizer', () => {
     expect(getVisualizer('bars').id).toBe('bars')
   })
 
-  it('draws rounded bars and caps', () => {
+  it('draws rounded bars', () => {
     const ctx = fakeContext()
     createBarsVisualizer().draw(drawArgs(ctx))
     expect(ctx.calls).toContain('arcTo')
-    expect(ctx.calls.filter((c) => c === 'fill')).toHaveLength(2)
+    expect(ctx.calls.filter((c) => c === 'fill')).toHaveLength(1)
   })
 
-  it('draws more shapes when mirrored', () => {
-    const off = fakeContext()
-    createBarsVisualizer().draw(drawArgs(off, { settings: { mirror: false } }))
-    const on = fakeContext()
-    createBarsVisualizer().draw(drawArgs(on, { settings: { mirror: true } }))
-    expect(on.calls.filter((c) => c === 'moveTo').length).toBeGreaterThan(
-      off.calls.filter((c) => c === 'moveTo').length,
-    )
+  it('rebuilds the gradient when mirror is toggled', () => {
+    const ctx = fakeContext()
+    const visualizer = createBarsVisualizer()
+    visualizer.draw(drawArgs(ctx, { settings: { mirror: false } }))
+    visualizer.draw(drawArgs(ctx, { settings: { mirror: true } }))
+    expect(ctx.createLinearGradient).toHaveBeenCalledTimes(2)
+  })
+
+  it('draws each bar on both sides of the center, symmetrically', () => {
+    const xs: number[] = []
+    const ctx = fakeContext()
+    ;(ctx as { moveTo: (x: number) => void }).moveTo = (x: number) => {
+      xs.push(x)
+    }
+    createBarsVisualizer().draw(drawArgs(ctx, { settings: { barCount: 64 } }))
+
+    expect(xs).toHaveLength(64)
+    // moveTo sits half a bar in from the bar's left edge, i.e. at the bar center, so the
+    // outermost bars should mirror each other around the middle of the canvas
+    const sorted = [...xs].sort((a, b) => a - b)
+    expect(sorted[0] + sorted[sorted.length - 1]).toBeCloseTo(800, 0)
   })
 
   it('survives changing the bar count live and tiny or empty canvases', () => {
