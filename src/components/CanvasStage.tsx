@@ -1,18 +1,15 @@
 import { useRef } from 'react'
 import { FolderOpen, ListMusic, Loader2, Upload } from 'lucide-react'
 import { handleAudioFiles } from '@/audio/loadAudioFile'
+import { FpsMeter } from '@/components/FpsMeter'
+import { VisualizerCanvas } from '@/components/VisualizerCanvas'
 import { Button } from '@/components/ui/button'
 import { useFileDrop } from '@/hooks/useFileDrop'
 import { ACCEPTED_AUDIO_EXTENSIONS } from '@/lib/constants'
 import { usePlaybackStore } from '@/store/playbackStore'
 
-// Deterministic fake spectrum for the static mockup (replaced by the real canvas later)
-const BARS = Array.from({ length: 56 }, (_, i) => {
-  const x = i / 55
-  const envelope = Math.sin(Math.PI * Math.pow(x, 0.7))
-  const wobble = 0.55 + 0.45 * Math.abs(Math.sin(i * 1.7))
-  return Math.max(0.06, envelope * wobble)
-})
+const SHOW_FPS =
+  import.meta.env.DEV && new URLSearchParams(window.location.search).has('fps')
 
 const FILE_ACCEPT = `audio/*,${ACCEPTED_AUDIO_EXTENSIONS.join(',')}`
 const FORMATS_LABEL = ACCEPTED_AUDIO_EXTENSIONS.map((ext) =>
@@ -29,24 +26,9 @@ export function CanvasStage() {
   const showCard = !hasTrack || loading
 
   return (
-    <div
-      className="relative size-full overflow-hidden bg-black"
-      role="img"
-      aria-label={
-        hasTrack
-          ? 'Audio visualizer canvas'
-          : 'Audio visualizer canvas, no track loaded'
-      }
-    >
-      <div className="absolute inset-x-0 bottom-0 flex h-full items-end gap-[3px] px-4 pb-6 opacity-40 sm:gap-1 sm:px-8">
-        {BARS.map((h, i) => (
-          <div
-            key={i}
-            className="flex-1 rounded-t-full bg-gradient-to-t from-cyan-400 to-fuchsia-500"
-            style={{ height: `${h * 70}%` }}
-          />
-        ))}
-      </div>
+    <div className="relative size-full overflow-hidden bg-black">
+      <VisualizerCanvas />
+      {SHOW_FPS && <FpsMeter />}
 
       <input
         ref={inputRef}

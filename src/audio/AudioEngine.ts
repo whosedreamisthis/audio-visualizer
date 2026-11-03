@@ -7,13 +7,18 @@ import {
   SPEED,
 } from '@/lib/constants'
 import { clamp } from '@/lib/math'
-import type { BandEnergy, EqBandId, FftSize, TrackMeta, TrackSource } from '@/types'
+import type {
+  BandEnergy,
+  ByteBuffer,
+  EqBandId,
+  FftSize,
+  TrackMeta,
+  TrackSource,
+} from '@/types'
 import { getBandEnergy } from './bands'
 
 /** Smoothing time constant (seconds) for audio parameter changes. */
 const PARAM_TIME_CONSTANT = 0.015
-
-export type ByteBuffer = Uint8Array<ArrayBuffer>
 
 export type AudioEngineErrorCode =
   | 'not-initialized'

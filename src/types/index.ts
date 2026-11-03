@@ -8,6 +8,9 @@ export type FftSize = 512 | 1024 | 2048 | 4096
 
 export type TrackSource = 'file' | 'preset' | 'mic'
 
+/** Byte buffer type accepted by the Web Audio analyser methods. */
+export type ByteBuffer = Uint8Array<ArrayBuffer>
+
 export interface Size {
   width: number
   height: number
@@ -41,8 +44,12 @@ export interface BandEnergy {
 }
 
 export interface AudioFrame {
-  freq: Uint8Array
-  wave: Uint8Array
+  /** Byte frequency data (0..255 per bin); empty before the engine starts. */
+  freq: ByteBuffer
+  /** Byte time-domain data (128 is silence); empty before the engine starts. */
+  wave: ByteBuffer
+  /** Audio context sample rate in Hz (0 before the engine starts). */
+  sampleRate: number
   bands: BandEnergy
   beat: boolean
   beatStrength: number
@@ -75,6 +82,10 @@ export interface DrawArgs {
   height: number
   /** Seconds since the previous frame, clamped. */
   dt: number
+  /** Seconds since the loop started; drives idle animation. */
+  time: number
+  /** True while a track is playing. */
+  playing: boolean
   theme: Theme
   settings: VisualizerSettings
   audio: AudioFrame

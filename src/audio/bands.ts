@@ -44,17 +44,31 @@ export function rangeEnergy(
   return sum / ((end - start) * 255)
 }
 
+/** Write bass, mid, treble and overall energy (each 0..1) into `out` without allocating. */
+export function writeBandEnergy(
+  out: BandEnergy,
+  freq: Uint8Array,
+  sampleRate: number,
+  fftSize: number,
+): BandEnergy {
+  const { bass, mid, treble } = BAND_RANGES_HZ
+  out.bass = rangeEnergy(freq, sampleRate, fftSize, bass[0], bass[1])
+  out.mid = rangeEnergy(freq, sampleRate, fftSize, mid[0], mid[1])
+  out.treble = rangeEnergy(freq, sampleRate, fftSize, treble[0], treble[1])
+  out.level = rangeEnergy(freq, sampleRate, fftSize, bass[0], treble[1])
+  return out
+}
+
 /** Bass, mid, treble and overall energy (each 0..1) from byte frequency data. */
 export function getBandEnergy(
   freq: Uint8Array,
   sampleRate: number,
   fftSize: number,
 ): BandEnergy {
-  const { bass, mid, treble } = BAND_RANGES_HZ
-  return {
-    bass: rangeEnergy(freq, sampleRate, fftSize, bass[0], bass[1]),
-    mid: rangeEnergy(freq, sampleRate, fftSize, mid[0], mid[1]),
-    treble: rangeEnergy(freq, sampleRate, fftSize, treble[0], treble[1]),
-    level: rangeEnergy(freq, sampleRate, fftSize, bass[0], treble[1]),
-  }
+  return writeBandEnergy(
+    { bass: 0, mid: 0, treble: 0, level: 0 },
+    freq,
+    sampleRate,
+    fftSize,
+  )
 }
