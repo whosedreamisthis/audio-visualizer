@@ -106,3 +106,11 @@
   - `App.tsx`: header and player bar float over the canvas in fullscreen and fade out with the cursor; the sidebar and controls sheet are hidden; the header button toggles fullscreen at every width, swaps its icon, and is hidden where the API is unsupported. `ShortcutsDialog.tsx` (Base UI dialog) is driven by a new `uiStore.helpOpen`.
   - Also fixed: the loop setting now persists across reloads (`playbackStore` persists only `loop` as `av-playback`).
   - Tests: `shortcuts.test.ts` (7); 193 pass. Fullscreen, auto-hide and key handling were not checked in a real browser.
+
+- **Preset Library:** Bundled preset tracks are listed from a manifest and loaded on demand through TanStack Query, replacing the static placeholder cards in the Presets tab.
+  - `public/presets/`: four original CC0 tracks synthesized for this project (Pulse Drive 128 BPM, Night Bloom 66, Glass Tide 84, Solar Run 152; 128 kbps mono MP3, 40-48 s, under 800 KB each) plus `manifest.json` with a suggested theme per track.
+  - `src/api/queryKeys.ts`, `presets.ts`, `hooks.ts`: `presetKeys`, a type-guard `parseManifest` (rejects missing/invalid fields and duplicate ids), `resolveAssetUrl` honoring `BASE_URL`, `fetchManifest`/`fetchPresetAudio` checking `response.ok`. `usePresetTracks` uses `staleTime: Infinity`; `useLoadPreset` fetches the blob through `queryClient.fetchQuery` (cached, so re-selecting is instant), creates an object URL, loads it, applies the suggested theme and plays, with a token guarding stale loads. Errors toast and set playback `error`.
+  - `AudioEngine.loadUrl` gained an `ownsUrl` flag so the engine revokes the previous preset's object URL.
+  - `src/components/PresetLibrary.tsx`: skeletons, Retry error state, per-track spinner, active highlight, license badge and attribution link; the whole card is clickable.
+  - Also changed: waveform now interpolates samples and applies light smoothing for curvier lines (`waveformMath.ts`, `SMOOTH_PASSES` in `waveform.ts`); beat detection reads an unsmoothed second analyser (`AudioEngine.getOnsetBass`) so beats are no longer delayed by display smoothing.
+  - Tests: `presets.test.ts` plus waveform interpolation/smoothing tests; 206 pass. Blocked-network Retry, cache hit and the new beat timing were not verified automatically; the user confirmed clicking and playback in the browser.
